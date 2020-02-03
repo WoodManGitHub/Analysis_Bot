@@ -1,5 +1,5 @@
 # Analysis_Bot
-Discord Analysis Bot
+Discord Analysis Bot (Undone)
 
 # Info
 Analyze users online, offline, AFK in voice channels.
