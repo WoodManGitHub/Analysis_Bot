@@ -1,6 +1,6 @@
 import { Collection, ObjectID } from 'mongodb';
 import { Core } from "..";
-import { ERR_DB_NOT_INIT } from "./MongoDB";
+import { ERR_DB_NOT_INIT } from './MongoDB';
 
 export interface ITime {
     _id?: ObjectID;
