@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { resolve } from 'path';
-import { Bot } from './Component/bot';
+import { Bot } from './Component/Bot';
 import { MongoDB } from './Core/MongoDB';
 import { TimeManager } from './Core/TimeManager';
 
