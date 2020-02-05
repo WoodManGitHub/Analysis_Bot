@@ -1,4 +1,4 @@
-import { Collection, ObjectID } from "mongodb";
+import { Collection, ObjectID } from 'mongodb';
 import { Core } from "..";
 import { ERR_DB_NOT_INIT } from "./MongoDB";
 
@@ -29,5 +29,11 @@ export class TimeManager {
             userID,
             activities
         } as ITime)).ops[0] as ITime;
+    }
+
+    public async get(serverID: string) {
+        if (!this.database) throw ERR_DB_NOT_INIT;
+
+        return this.database.find({ serverID: serverID })
     }
 }
