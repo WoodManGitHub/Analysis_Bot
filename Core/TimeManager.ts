@@ -1,5 +1,5 @@
 import { Collection, ObjectID } from 'mongodb';
-import { Core } from "..";
+import { Core } from '..';
 import { ERR_DB_NOT_INIT } from './MongoDB';
 
 export interface ITime {
@@ -34,6 +34,6 @@ export class TimeManager {
     public async get(serverID: string) {
         if (!this.database) throw ERR_DB_NOT_INIT;
 
-        return this.database.find({ serverID: serverID })
+        return this.database.find({ serverID: serverID }).toArray();
     }
 }
