@@ -1,3 +1,4 @@
+import { CommandClient } from 'eris';
 import { EventEmitter } from 'events';
 import { resolve } from 'path';
 import { Bot } from './Component/Bot';
@@ -9,6 +10,7 @@ export class Core extends EventEmitter {
     public readonly config = require(resolve('config.json'));
     public readonly database = new MongoDB(this.config);
     public readonly TimeManager = new TimeManager(this);
+    public bot: CommandClient | null | undefined;
 
     constructor() {
         super();
@@ -21,17 +23,18 @@ export class Core extends EventEmitter {
         this.on('ready', async () => {
             try {
                 // tslint:disable-next-line:no-unused-expression
-                new Web(this);
+                new Bot(this);
             } catch (error) {
                 console.error(error);
             }
 
             try {
                 // tslint:disable-next-line:no-unused-expression
-                new Bot(this);
+                new Web(this);
             } catch (error) {
                 console.error(error);
             }
+
         });
     }
 }

@@ -22,6 +22,7 @@ export class Bot {
 
         this.bot.on('ready', () => {
             console.log('[Discord] Ready!');
+            core.bot = this.bot;
         });
 
         this.bot.on('voiceChannelJoin', (member: Member, newChannel: VoiceChannel) => {
