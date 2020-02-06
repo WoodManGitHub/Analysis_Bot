@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import { resolve } from 'path';
 import { Bot } from './Component/Bot';
+import { Web } from './Component/Web';
 import { MongoDB } from './Core/MongoDB';
 import { TimeManager } from './Core/TimeManager';
 
@@ -18,6 +19,13 @@ export class Core extends EventEmitter {
         this.database.on('connect', () => this.emit('ready'));
 
         this.on('ready', async () => {
+            try {
+                // tslint:disable-next-line:no-unused-expression
+                new Web(this);
+            } catch (error) {
+                console.error(error);
+            }
+
             try {
                 // tslint:disable-next-line:no-unused-expression
                 new Bot(this);

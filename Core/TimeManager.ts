@@ -3,10 +3,10 @@ import { Core } from '..';
 import { ERR_DB_NOT_INIT } from './MongoDB';
 
 export interface ITime {
-    _id?: ObjectID;
-    serverID?: string;
-    userID?: string;
-    activities?: { time: number, type: string }[];
+    _id: ObjectID;
+    serverID: string;
+    userID: string;
+    activities: Array<{ time: number, type: string }>;
 }
 
 export class TimeManager {
@@ -21,12 +21,14 @@ export class TimeManager {
         });
     }
 
+    // tslint:disable-next-line: ban-types
     public async create(serverID: string, userID: string, activities: Object | undefined) {
         if (!this.database) throw ERR_DB_NOT_INIT;
 
         return (await this.database.insertOne({
             serverID,
             userID,
+            // tslint:disable-next-line: object-literal-sort-keys
             activities
         } as ITime)).ops[0] as ITime;
     }
@@ -34,6 +36,6 @@ export class TimeManager {
     public async get(serverID: string) {
         if (!this.database) throw ERR_DB_NOT_INIT;
 
-        return this.database.find({ serverID: serverID }).toArray();
+        return this.database.find({ serverID }).toArray();
     }
 }
