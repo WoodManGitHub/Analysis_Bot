@@ -7,6 +7,7 @@ export class Bot {
     private bot: CommandClient;
     private timeManager: TimeManager;
     private timeStatus: { [key: string]: { [key: string]: { time: number, type: string }[] } } = {};
+
     constructor(core: Core) {
         this.config = core.config.bot;
         this.timeManager = core.TimeManager;
