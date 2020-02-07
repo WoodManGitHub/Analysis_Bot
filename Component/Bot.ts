@@ -16,13 +16,14 @@ export class Bot {
 
         this.bot = new CommandClient(
             this.config.token,
-            {},
+            { restMode: true },
             { prefix: this.config.prefix }
         );
 
         this.bot.on('ready', () => {
             console.log('[Discord] Ready!');
             core.bot = this.bot;
+            core.emit('discordReady');
         });
 
         this.bot.on('voiceChannelJoin', (member: Member, newChannel: VoiceChannel) => {
