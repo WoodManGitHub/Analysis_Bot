@@ -27,14 +27,15 @@ export class Core extends EventEmitter {
             } catch (error) {
                 console.error(error);
             }
+        });
 
+        this.on('discordReady', () => {
             try {
                 // tslint:disable-next-line:no-unused-expression
                 new Web(this);
             } catch (error) {
                 console.error(error);
             }
-
         });
     }
 }
