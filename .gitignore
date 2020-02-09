@@ -89,3 +89,6 @@ dist/**/*.map
 
 # Config
 config.json
+
+# Database transfer
+databaseTransfer/
