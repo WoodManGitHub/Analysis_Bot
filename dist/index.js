@@ -2,7 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
 const path_1 = require("path");
-const bot_1 = require("./Component/bot");
+const Bot_1 = require("./Component/Bot");
+const Web_1 = require("./Component/Web");
 const MongoDB_1 = require("./Core/MongoDB");
 const TimeManager_1 = require("./Core/TimeManager");
 class Core extends events_1.EventEmitter {
@@ -15,7 +16,15 @@ class Core extends events_1.EventEmitter {
         this.database.on('connect', () => this.emit('ready'));
         this.on('ready', async () => {
             try {
-                new bot_1.Bot(this);
+                new Bot_1.Bot(this);
+            }
+            catch (error) {
+                console.error(error);
+            }
+        });
+        this.on('discordReady', () => {
+            try {
+                new Web_1.Web(this);
             }
             catch (error) {
                 console.error(error);
