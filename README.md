@@ -10,7 +10,16 @@ Analyze users online, offline, AFK in voice channels.
 2. npm install
 3. node dist
 ```
+
+# Web
 Web on `localhost` and port is `8080`.
+
+- `/day/:serverID` 
+  - Get server today data
+- `/month/:serverID`
+  - Get server month data
+- `/all/:serverID`
+  - Get server all data
 
 # Todo
 - [ ] Web pages
