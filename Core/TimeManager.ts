@@ -6,7 +6,8 @@ export interface ITime {
     _id: ObjectID;
     serverID: string;
     userID: string;
-    activities: Array<{ time: number, type: string }>;
+    timeStrap: number;
+    type: string;
 }
 
 export class TimeManager {
@@ -17,23 +18,29 @@ export class TimeManager {
             if (!core.database.client) throw Error('Database client not init');
 
             this.database = core.database.client.collection('time');
-            this.database.createIndex({ serverID: 1, userID: 1 });
+            this.database.createIndex({ serverID: 1, timeStrap: 1 });
         });
     }
 
     // tslint:disable-next-line: ban-types
-    public async create(serverID: string, userID: string, activities: Object | undefined) {
+    public async create(serverID: string, userID: string, timeStrap: number, type: string) {
         if (!this.database) throw ERR_DB_NOT_INIT;
 
         return (await this.database.insertOne({
             serverID,
             userID,
-            // tslint:disable-next-line: object-literal-sort-keys
-            activities
+            timeStrap,
+            type
         } as ITime)).ops[0] as ITime;
     }
 
-    public async get(serverID: string) {
+    public async get(serverID: string, startTime: number, endTime: number) {
+        if (!this.database) throw ERR_DB_NOT_INIT;
+
+        return this.database.find({ serverID, timeStrap: { $gte: startTime, $lt: endTime } }).toArray();
+    }
+
+    public async getAll(serverID: string) {
         if (!this.database) throw ERR_DB_NOT_INIT;
 
         return this.database.find({ serverID }).toArray();
