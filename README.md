@@ -10,7 +10,9 @@ Analyze users online, offline, AFK in voice channels.
 2. npm install
 3. node dist
 ```
+Web on `localhost` and port is `8080`.
 
 # Todo
 - [ ] Web pages
 - [ ] Predicting user status
+- [x] ~~Web backend~~
