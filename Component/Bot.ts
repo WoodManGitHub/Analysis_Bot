@@ -6,7 +6,6 @@ export class Bot {
     private config: any;
     private bot: CommandClient;
     private timeManager: TimeManager;
-    private timeStatus: { [key: string]: { [key: string]: Array<{ time: number, type: string }> } } = {};
 
     constructor(core: Core) {
         this.config = core.config.bot;
@@ -34,7 +33,7 @@ export class Bot {
 
             if (this.config.ignoreUsers.includes(userID)) return;
             const type = (afkChannel != null) ? ((newChannel.id === afkChannel) ? 'afk' : 'join') : 'join';
-            this.timeData(userID, serverID, joinTimestrap, type);
+            this.timeManager.create(serverID, userID, joinTimestrap, type);
         });
 
         this.bot.on('voiceChannelLeave', (member: Member, oldChannel: VoiceChannel) => {
@@ -43,10 +42,7 @@ export class Bot {
             const leaveTimestrap = Math.round(Date.now() / 1000);
 
             if (this.config.ignoreUsers.includes(userID)) return;
-            this.timeData(userID, serverID, leaveTimestrap, 'leave').then(result => {
-                this.timeManager.create(serverID, userID, result[userID][serverID]);
-                this.timeStatus[userID][serverID] = [];
-            });
+            this.timeManager.create(serverID, userID, leaveTimestrap, 'leave');
         });
 
         this.bot.on('voiceChannelSwitch', (member: Member, newChannel: VoiceChannel, oldChannel: VoiceChannel) => {
@@ -59,9 +55,9 @@ export class Bot {
             if (afkChannel === null) return;
 
             if (newChannel.id === afkChannel) {
-                this.timeData(userID, serverID, tempTimestrap, 'afk');
+                this.timeManager.create(serverID, userID, tempTimestrap, 'afk');
             } else if (oldChannel.id === afkChannel) {
-                this.timeData(userID, serverID, tempTimestrap, 'back');
+                this.timeManager.create(serverID, userID, tempTimestrap, 'back');
             }
         });
 
@@ -80,17 +76,5 @@ export class Bot {
 
     private async commandPredict(msg: Message, args: string[]) {
         msg.channel.createMessage('Test function');
-    }
-
-    private async timeData(userID: string, serverID: string, timeStrap: number, type: string) {
-        if (this.timeStatus[userID] === undefined) this.timeStatus[userID] = {};
-        if (this.timeStatus[userID][serverID] === undefined) this.timeStatus[userID][serverID] = [];
-
-        this.timeStatus[userID][serverID].push({
-            time: timeStrap,
-            type
-        });
-
-        return this.timeStatus;
     }
 }
