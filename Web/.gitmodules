@@ -1,0 +1,3 @@
+[submodule "Web"]
+    path = Web
+    url = https://github.com/WoodManGitHub/Analysis_Bot_Web
