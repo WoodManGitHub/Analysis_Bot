@@ -1,3 +1,4 @@
+import cors from 'cors';
 import { CommandClient } from 'eris';
 import { Application, NextFunction, Request, Response } from 'express';
 import express from 'express';
@@ -35,6 +36,7 @@ export class Web {
 
     private async middlewares() {
         this.server.use(express.json());
+        this.server.use(cors());
     }
 
     private async errorHandler() {

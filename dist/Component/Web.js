@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const cors_1 = __importDefault(require("cors"));
 const express_1 = __importDefault(require("express"));
 const moment_1 = __importDefault(require("moment"));
 const ERR_BAD_REQUEST = '400 Bad request!';
@@ -27,6 +28,7 @@ class Web {
     }
     async middlewares() {
         this.server.use(express_1.default.json());
+        this.server.use(cors_1.default());
     }
     async errorHandler() {
         this.server.use((err, req, res, next) => {
