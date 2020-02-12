@@ -3,14 +3,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const eris_1 = require("eris");
 class Bot {
     constructor(core) {
-        this.timeStatus = {};
         this.config = core.config.bot;
         this.timeManager = core.TimeManager;
         if (!this.config.token)
             throw Error('Discord token missing');
-        this.bot = new eris_1.CommandClient(this.config.token, {}, { prefix: this.config.prefix });
+        this.bot = new eris_1.CommandClient(this.config.token, { restMode: true }, { prefix: this.config.prefix });
         this.bot.on('ready', () => {
             console.log('[Discord] Ready!');
+            core.bot = this.bot;
+            core.emit('discordReady');
         });
         this.bot.on('voiceChannelJoin', (member, newChannel) => {
             const serverID = newChannel.guild.id;
@@ -19,8 +20,8 @@ class Bot {
             const afkChannel = newChannel.guild.afkChannelID;
             if (this.config.ignoreUsers.includes(userID))
                 return;
-            const type = (afkChannel != null) ? ((newChannel.id == afkChannel) ? 'afk' : 'join') : 'join';
-            this.timeData(userID, serverID, joinTimestrap, type);
+            const type = (afkChannel != null) ? ((newChannel.id === afkChannel) ? 'afk' : 'join') : 'join';
+            this.timeManager.create(serverID, userID, joinTimestrap, type);
         });
         this.bot.on('voiceChannelLeave', (member, oldChannel) => {
             const serverID = oldChannel.guild.id;
@@ -28,10 +29,7 @@ class Bot {
             const leaveTimestrap = Math.round(Date.now() / 1000);
             if (this.config.ignoreUsers.includes(userID))
                 return;
-            this.timeData(userID, serverID, leaveTimestrap, 'leave').then((result) => {
-                this.timeManager.create(serverID, userID, result[userID][serverID]);
-                this.timeStatus[userID][serverID] = [];
-            });
+            this.timeManager.create(serverID, userID, leaveTimestrap, 'leave');
         });
         this.bot.on('voiceChannelSwitch', (member, newChannel, oldChannel) => {
             const afkChannel = newChannel.guild.afkChannelID;
@@ -40,13 +38,13 @@ class Bot {
             const tempTimestrap = Math.round(Date.now() / 1000);
             if (this.config.ignoreUsers.includes(userID))
                 return;
-            if (afkChannel == null)
+            if (afkChannel === null)
                 return;
-            if (newChannel.id == afkChannel) {
-                this.timeData(userID, serverID, tempTimestrap, 'afk');
+            if (newChannel.id === afkChannel) {
+                this.timeManager.create(serverID, userID, tempTimestrap, 'afk');
             }
-            else if (oldChannel.id == afkChannel) {
-                this.timeData(userID, serverID, tempTimestrap, 'back');
+            else if (oldChannel.id === afkChannel) {
+                this.timeManager.create(serverID, userID, tempTimestrap, 'back');
             }
         });
         this.registerCommand();
@@ -62,17 +60,6 @@ class Bot {
     async commandPredict(msg, args) {
         msg.channel.createMessage('Test function');
     }
-    async timeData(userID, serverID, timeStrap, type) {
-        if (this.timeStatus[userID] == undefined)
-            this.timeStatus[userID] = {};
-        if (this.timeStatus[userID][serverID] == undefined)
-            this.timeStatus[userID][serverID] = [];
-        this.timeStatus[userID][serverID].push({
-            'time': timeStrap,
-            'type': type
-        });
-        return this.timeStatus;
-    }
 }
 exports.Bot = Bot;
-//# sourceMappingURL=bot.js.map
+//# sourceMappingURL=Bot.js.map

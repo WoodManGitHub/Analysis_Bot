@@ -12,11 +12,13 @@ const ERR_FORBIDDEN = '400 Forbidden!';
 const ERR_NOT_FOUND = '404 Not found!';
 
 export class Web {
+    private config: any;
     private server: Application;
     private timeManager: TimeManager;
     private Bot: CommandClient;
 
     constructor(core: Core) {
+        this.config = core.config.web;
         this.timeManager = core.TimeManager;
         if (core.bot != null || core.bot !== undefined) {
             this.Bot = core.bot!;
@@ -29,14 +31,14 @@ export class Web {
         this.middlewares();
         this.registerRoutes();
         this.errorHandler();
-        this.server.listen(8080, () => {
+        this.server.listen(this.config.port, () => {
             console.log('[Web] Ready!');
         });
     }
 
     private async middlewares() {
         this.server.use(express.json());
-        this.server.use(cors());
+        this.server.use(cors({ origin: this.config.origin }));
     }
 
     private async errorHandler() {

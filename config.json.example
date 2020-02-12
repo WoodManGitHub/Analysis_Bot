@@ -12,5 +12,9 @@
     "database": {
         "host": "mongodb://localhost:27017",
         "name": "analysisbot"
+    },
+    "web": {
+        "port": 8080,
+        "origin": "*"
     }
 }
