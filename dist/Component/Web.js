@@ -23,7 +23,7 @@ class Web {
         this.middlewares();
         this.registerRoutes();
         this.errorHandler();
-        this.server.listen(this.config.port, () => {
+        this.server.listen(this.config.port, '0.0.0.0', () => {
             console.log('[Web] Ready!');
         });
     }
@@ -62,10 +62,10 @@ class Web {
         };
     }
     async registerRoutes() {
-        this.server.get('/', (req, res) => res.send('Analysis Bot Web Server'));
-        this.server.get('/day/:serverID', this.route(this.getDay));
-        this.server.get('/month/:serverID', this.route(this.getMonth));
-        this.server.get('/all/:serverID', this.route(this.getAll));
+        this.server.get('/api', (req, res) => res.send('Analysis Bot Web Server'));
+        this.server.get('/api/day/:serverID', this.route(this.getDay));
+        this.server.get('/api/month/:serverID', this.route(this.getMonth));
+        this.server.get('/api/all/:serverID', this.route(this.getAll));
     }
     async getDay(req, res) {
         const startTime = new Date().setHours(0, 0, 0, 0) / 1000;
