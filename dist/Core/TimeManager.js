@@ -30,6 +30,11 @@ class TimeManager {
             throw MongoDB_1.ERR_DB_NOT_INIT;
         return this.database.find({ serverID }).toArray();
     }
+    async getByUser(serverID, userID, startTime, endTime) {
+        if (!this.database)
+            throw MongoDB_1.ERR_DB_NOT_INIT;
+        return this.database.find({ serverID, userID, timeStrap: { $gte: startTime, $lt: endTime } }).toArray();
+    }
 }
 exports.TimeManager = TimeManager;
 //# sourceMappingURL=TimeManager.js.map
