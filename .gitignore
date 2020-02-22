@@ -92,3 +92,6 @@ config.json
 
 # Database transfer
 databaseTransfer/
+
+# PM2
+ecosystem.config.js

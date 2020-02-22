@@ -23,7 +23,7 @@ class Web {
         this.middlewares();
         this.registerRoutes();
         this.errorHandler();
-        this.server.listen(this.config.port, () => {
+        this.server.listen(this.config.port, '0.0.0.0', () => {
             console.log('[Web] Ready!');
         });
     }
@@ -62,16 +62,16 @@ class Web {
         };
     }
     async registerRoutes() {
-        this.server.get('/', (req, res) => res.send('Analysis Bot Web Server'));
-        this.server.get('/day/:serverID', this.route(this.getDay));
-        this.server.get('/month/:serverID', this.route(this.getMonth));
-        this.server.get('/all/:serverID', this.route(this.getAll));
+        this.server.get('/api', (req, res) => res.send('Analysis Bot Web Server'));
+        this.server.get('/api/day/:serverID', this.route(this.getDay));
+        this.server.get('/api/month/:serverID', this.route(this.getMonth));
+        this.server.get('/api/all/:serverID', this.route(this.getAll));
     }
     async getDay(req, res) {
         const startTime = new Date().setHours(0, 0, 0, 0) / 1000;
         const endTime = startTime + 86400;
         const dayTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
-        this.processData(dayTime, req.params.serverID).then(data => {
+        this.processData(dayTime, req.params.serverID, startTime).then(data => {
             res.json({ msg: 'OK', data });
         });
     }
@@ -82,17 +82,17 @@ class Web {
         const startTime = new Date(year, month, 0).setDate(1) / 1000;
         const endTime = new Date(year, month, 0).getTime() / 1000;
         const monthTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
-        this.processData(monthTime, req.params.serverID).then(data => {
+        this.processData(monthTime, req.params.serverID, startTime).then(data => {
             res.json({ msg: 'OK', data });
         });
     }
     async getAll(req, res) {
         const allTime = await this.timeManager.getAll(req.params.serverID);
-        this.processData(allTime, req.params.serverID).then(data => {
+        this.processData(allTime, req.params.serverID, undefined).then(data => {
             res.json({ msg: 'OK', data });
         });
     }
-    async processData(raw, serverID) {
+    async processData(raw, serverID, startTime) {
         const dataRaw = {};
         const data = [];
         for (const item of raw) {
@@ -112,8 +112,20 @@ class Web {
             let lastActivity;
             for (const activity of rawData) {
                 if (lastActivity === undefined) {
-                    lastActivity = activity;
-                    continue;
+                    if (startTime !== undefined) {
+                        const lastData = await this.timeManager.getLastDataByUser(serverID, key, startTime);
+                        if (lastData.length !== 0) {
+                            lastActivity = { time: moment_1.default.unix(startTime).format('YYYY-MM-DD HH:mm:ss'), type: lastData[0].type };
+                        }
+                        else {
+                            lastActivity = activity;
+                            continue;
+                        }
+                    }
+                    else {
+                        lastActivity = activity;
+                        continue;
+                    }
                 }
                 let keepLastActivity = false;
                 switch (activity.type) {
