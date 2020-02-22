@@ -100,7 +100,6 @@ export class Bot {
         const type = args[0];
         const userID = args[1];
         const user = (await this.bot.getRESTGuildMember(msg.member!.guild.id, userID));
-        const username = user.nick ? user.nick : user.username;
         let startTime: number;
         let endTime: number;
 
@@ -119,7 +118,7 @@ export class Bot {
 
         const Time = await this.timeManager.getByUser(msg.member!.guild.id, userID, startTime!, endTime!);
         this.genTimeData(Time, msg.member!.guild.id, startTime!, endTime!).then(async result => {
-            msg.channel.createMessage(await this.genStatusMessage(username, result![userID].online, result![userID].offline, result![userID].afk));
+            msg.channel.createMessage(await this.genStatusMessage(user, result![userID].online, result![userID].offline, result![userID].afk));
         });
     }
 
@@ -275,7 +274,6 @@ export class Bot {
             if (lastActivity !== undefined) {
                 const now = ((endTime !== undefined) ? moment.unix(endTime) : moment()).format('YYYY-MM-DD HH:mm:ss');
 
-                // tempData.push([lastActivity.time, 'Unknown', now]);
                 switch (lastActivity.type) {
                     case 'join': {
                         onlineTotal += moment(now).diff(lastActivity.time, 'seconds');
@@ -301,17 +299,20 @@ export class Bot {
         return data;
     }
 
-    private async genStatusMessage(user: string, online: number, offline: number, afk: number) {
+    private async genStatusMessage(user: Member, online: number, offline: number, afk: number) {
         const fields = [];
 
-        fields.push({ name: 'Online', value: this.getDuration(online) });
-        fields.push({ name: 'Offline', value: this.getDuration(offline) });
-        fields.push({ name: 'AFK', value: this.getDuration(afk) });
+        fields.push({ name: 'Online', value: this.getDuration(online), inline: true });
+        fields.push({ name: 'Offline', value: this.getDuration(offline), inline: true });
+        fields.push({ name: 'AFK', value: this.getDuration(afk), inline: true });
 
         return {
             embed: {
                 color: 4886754,
-                description: user,
+                author: {
+                    name: user.nick ? user.nick : user.username,
+                    icon_url: user.avatarURL
+                },
                 fields,
                 title: 'Status'
             }
@@ -378,34 +379,4 @@ export class Bot {
             });
         });
     }
-
-    // private quickSort(arr: string[]) {
-    //     if (arr.length <= 1) return arr;
-
-    //     const swap = (array: string[], i: number, j: number) => {
-    //         [array[i], array[j]] = [array[j], array[i]];
-    //     };
-    //     const partition = (array: string[], start: number, end: number) => {
-    //         let splitIndex = start + 1;
-    //         for (let i = start + 1; i <= end; i++) {
-    //             if (array[i] < array[start]) {
-    //                 swap(array, i, splitIndex);
-    //                 splitIndex++;
-    //             }
-    //         }
-
-    //         swap(array, start, splitIndex - 1);
-    //         return splitIndex - 1;
-    //     };
-    //     // tslint:disable-next-line: variable-name
-    //     const _quickSort = (array: string[], start: number, end: number) => {
-    //         if (start >= end) return array;
-
-    //         const middle = partition(array, start, end);
-    //         _quickSort(array, start, middle - 1);
-    //         _quickSort(array, middle + 1, end);
-    //         return array;
-    //     };
-    //     return _quickSort(arr, 0, arr.length - 1);
-    // }
 }

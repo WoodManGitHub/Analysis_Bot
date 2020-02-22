@@ -83,7 +83,6 @@ class Bot {
         const type = args[0];
         const userID = args[1];
         const user = (await this.bot.getRESTGuildMember(msg.member.guild.id, userID));
-        const username = user.nick ? user.nick : user.username;
         let startTime;
         let endTime;
         switch (type) {
@@ -100,7 +99,7 @@ class Bot {
         }
         const Time = await this.timeManager.getByUser(msg.member.guild.id, userID, startTime, endTime);
         this.genTimeData(Time, msg.member.guild.id, startTime, endTime).then(async (result) => {
-            msg.channel.createMessage(await this.genStatusMessage(username, result[userID].online, result[userID].offline, result[userID].afk));
+            msg.channel.createMessage(await this.genStatusMessage(user, result[userID].online, result[userID].offline, result[userID].afk));
         });
     }
     async commandRank(msg, args) {
@@ -276,13 +275,16 @@ class Bot {
     }
     async genStatusMessage(user, online, offline, afk) {
         const fields = [];
-        fields.push({ name: 'Online', value: this.getDuration(online) });
-        fields.push({ name: 'Offline', value: this.getDuration(offline) });
-        fields.push({ name: 'AFK', value: this.getDuration(afk) });
+        fields.push({ name: 'Online', value: this.getDuration(online), inline: true });
+        fields.push({ name: 'Offline', value: this.getDuration(offline), inline: true });
+        fields.push({ name: 'AFK', value: this.getDuration(afk), inline: true });
         return {
             embed: {
                 color: 4886754,
-                description: user,
+                author: {
+                    name: user.nick ? user.nick : user.username,
+                    icon_url: user.avatarURL
+                },
                 fields,
                 title: 'Status'
             }
