@@ -51,4 +51,10 @@ export class TimeManager {
 
         return this.database.find({ serverID, userID, timeStrap: { $gte: startTime, $lt: endTime } }).toArray();
     }
+
+    public async getLastDataByUser(serverID: string, userID: string, priorTo: number) {
+        if (!this.database) throw ERR_DB_NOT_INIT;
+
+        return this.database.find({ serverID, userID, timeStrap: { $lt: priorTo } }).sort({ timeStrap: -1 }).limit(1).toArray();
+    }
 }

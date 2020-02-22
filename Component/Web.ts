@@ -82,7 +82,7 @@ export class Web {
         const endTime = startTime + 86400;
         const dayTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
 
-        this.processData(dayTime, req.params.serverID).then(data => {
+        this.processData(dayTime, req.params.serverID, startTime).then(data => {
             res.json({ msg: 'OK', data });
         });
     }
@@ -95,7 +95,7 @@ export class Web {
         const endTime = new Date(year, month, 0).getTime() / 1000;
         const monthTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
 
-        this.processData(monthTime, req.params.serverID).then(data => {
+        this.processData(monthTime, req.params.serverID, startTime).then(data => {
             res.json({ msg: 'OK', data });
         });
     }
@@ -103,12 +103,12 @@ export class Web {
     private async getAll(req: Request, res: Response) {
         const allTime = await this.timeManager.getAll(req.params.serverID);
 
-        this.processData(allTime, req.params.serverID).then(data => {
+        this.processData(allTime, req.params.serverID, undefined).then(data => {
             res.json({ msg: 'OK', data });
         });
     }
 
-    private async processData(raw: ITime[], serverID: string) {
+    private async processData(raw: ITime[], serverID: string, startTime: number | undefined) {
         const dataRaw: { [key: string]: Array<{ time: string, type: string }> } = {};
         const data: Array<{ measure: string, avater: string, categories: { [key: string]: { color: string } }, data: string[][] }> = [];
 
@@ -130,8 +130,18 @@ export class Web {
 
             for (const activity of rawData) {
                 if (lastActivity === undefined) {
-                    lastActivity = activity;
-                    continue;
+                    if (startTime !== undefined) {
+                        const lastData = await this.timeManager.getLastDataByUser(serverID, key, startTime);
+                        if (lastData.length !== 0) {
+                            lastActivity = { time: moment.unix(startTime).format('YYYY-MM-DD HH:mm:ss'), type: lastData[0].type };
+                        } else {
+                            lastActivity = activity;
+                            continue;
+                        }
+                    } else {
+                        lastActivity = activity;
+                        continue;
+                    }
                 }
                 let keepLastActivity = false;
                 switch (activity.type) {
