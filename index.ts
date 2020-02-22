@@ -4,12 +4,14 @@ import { resolve } from 'path';
 import { Bot } from './Component/Bot';
 import { Web } from './Component/Web';
 import { MongoDB } from './Core/MongoDB';
+import { RankManager } from './Core/RankManager';
 import { TimeManager } from './Core/TimeManager';
 
 export class Core extends EventEmitter {
     public readonly config = require(resolve('config.json'));
     public readonly database = new MongoDB(this.config);
     public readonly TimeManager = new TimeManager(this);
+    public readonly RankManager = new RankManager(this);
     public bot: CommandClient | null | undefined;
 
     constructor() {
