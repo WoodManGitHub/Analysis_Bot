@@ -368,7 +368,7 @@ class Bot {
         return durationText;
     }
     rankCron() {
-        node_schedule_1.default.scheduleJob('0 0 0 * * *', async () => {
+        node_schedule_1.default.scheduleJob('0 0 * * *', async () => {
             const settings = await this.rankManager.getAll();
             settings.forEach(async (setting) => {
                 if (setting.rankDisplay) {
