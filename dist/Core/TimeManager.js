@@ -23,17 +23,17 @@ class TimeManager {
     async get(serverID, startTime, endTime) {
         if (!this.database)
             throw MongoDB_1.ERR_DB_NOT_INIT;
-        return this.database.find({ serverID, timeStrap: { $gte: startTime, $lt: endTime } }).toArray();
+        return this.database.find({ serverID, timeStrap: { $gte: startTime, $lt: endTime } }).sort({ timeStrap: 1 }).toArray();
     }
     async getAll(serverID) {
         if (!this.database)
             throw MongoDB_1.ERR_DB_NOT_INIT;
-        return this.database.find({ serverID }).toArray();
+        return this.database.find({ serverID }).sort({ timeStrap: 1 }).toArray();
     }
     async getByUser(serverID, userID, startTime, endTime) {
         if (!this.database)
             throw MongoDB_1.ERR_DB_NOT_INIT;
-        return this.database.find({ serverID, userID, timeStrap: { $gte: startTime, $lt: endTime } }).toArray();
+        return this.database.find({ serverID, userID, timeStrap: { $gte: startTime, $lt: endTime } }).sort({ timeStrap: 1 }).toArray();
     }
     async getLastDataByUser(serverID, userID, priorTo) {
         if (!this.database)

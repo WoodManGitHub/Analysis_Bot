@@ -22,7 +22,6 @@ export class TimeManager {
         });
     }
 
-    // tslint:disable-next-line: ban-types
     public async create(serverID: string, userID: string, timeStrap: number, type: string) {
         if (!this.database) throw ERR_DB_NOT_INIT;
 
@@ -37,19 +36,19 @@ export class TimeManager {
     public async get(serverID: string, startTime: number, endTime: number) {
         if (!this.database) throw ERR_DB_NOT_INIT;
 
-        return this.database.find({ serverID, timeStrap: { $gte: startTime, $lt: endTime } }).toArray();
+        return this.database.find({ serverID, timeStrap: { $gte: startTime, $lt: endTime } }).sort({ timeStrap: 1 }).toArray();
     }
 
     public async getAll(serverID: string) {
         if (!this.database) throw ERR_DB_NOT_INIT;
 
-        return this.database.find({ serverID }).toArray();
+        return this.database.find({ serverID }).sort({ timeStrap: 1 }).toArray();
     }
 
     public async getByUser(serverID: string, userID: string, startTime: number, endTime: number) {
         if (!this.database) throw ERR_DB_NOT_INIT;
 
-        return this.database.find({ serverID, userID, timeStrap: { $gte: startTime, $lt: endTime } }).toArray();
+        return this.database.find({ serverID, userID, timeStrap: { $gte: startTime, $lt: endTime } }).sort({ timeStrap: 1 }).toArray();
     }
 
     public async getLastDataByUser(serverID: string, userID: string, priorTo: number) {
