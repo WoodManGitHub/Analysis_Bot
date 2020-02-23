@@ -117,7 +117,7 @@ export class Bot {
         }
 
         const Time = await this.timeManager.getByUser(msg.member!.guild.id, userID, startTime!, endTime!);
-        this.genTimeData(Time, msg.member!.guild.id, startTime!, endTime!).then(async result => {
+        this.genTimeData(Time, msg.member!.guild.id, startTime!, undefined).then(async result => {
             msg.channel.createMessage(await this.genStatusMessage(user, result![userID].online, result![userID].offline, result![userID].afk));
         });
     }
