@@ -88,7 +88,7 @@ export class Bot {
             argsRequired: true,
             description: 'Switch rank display.',
             guildOnly: true,
-            usage: '[on|off] <channelID>',
+            usage: '[on|off]',
         });
     }
 
@@ -118,7 +118,37 @@ export class Bot {
 
         const Time = await this.timeManager.getByUser(msg.member!.guild.id, userID, startTime!, endTime!);
         this.genTimeData(Time, msg.member!.guild.id, startTime!, undefined).then(async result => {
-            msg.channel.createMessage(await this.genStatusMessage(user, result![userID].online, result![userID].offline, result![userID].afk));
+            if (result![userID] !== undefined) {
+                msg.channel.createMessage(await this.genStatusMessage(user, result![userID].online, result![userID].offline, result![userID].afk));
+            } else {
+                const lastData = await this.timeManager.getLastDataByUser(msg.member!.guild.id, userID, startTime);
+                if (lastData.length !== 0) {
+                    let onlineTotal = 0;
+                    let offlineTotal = 0;
+                    let afkTotal = 0;
+                    switch (lastData[0].type) {
+                        case 'join': {
+                            onlineTotal += Math.round(Date.now() / 1000) - startTime;
+                            break;
+                        }
+                        case 'leave': {
+                            offlineTotal += Math.round(Date.now() / 1000) - startTime;
+                            break;
+                        }
+                        case 'afk': {
+                            afkTotal += Math.round(Date.now() / 1000) - startTime;
+                            break;
+                        }
+                        case 'back': {
+                            onlineTotal += Math.round(Date.now() / 1000) - startTime;
+                            break;
+                        }
+                    }
+                    msg.channel.createMessage(await this.genStatusMessage(user, onlineTotal, offlineTotal, afkTotal));
+                } else {
+                    msg.channel.createMessage(await this.genErrorMessage('No Data', user));
+                }
+            }
         });
     }
 
@@ -130,11 +160,11 @@ export class Bot {
         }
         switch (args[0]) {
             case 'on':
-                this.rankManager.update(serverID, args[1], true);
+                this.rankManager.update(serverID, msg.channel.id, true);
                 msg.channel.createMessage('Rank display has been turned on!\nI\'ll now send ranking every day at 0:00 to this channel.');
                 break;
             case 'off':
-                this.rankManager.update(serverID, args[1], false);
+                this.rankManager.update(serverID, msg.channel.id, false);
                 msg.channel.createMessage('Rank display has been turned off!');
                 break;
         }
@@ -299,6 +329,24 @@ export class Bot {
         return data;
     }
 
+    private async genErrorMessage(text: string, user: Member | undefined) {
+        return {
+            embed: (user === undefined) ? {
+                color: 13632027,
+                description: text,
+                title: 'Error'
+            } : {
+                    color: 13632027,
+                    author: {
+                        name: user.nick ? user.nick : user.username,
+                        icon_url: user.avatarURL
+                    },
+                    description: text,
+                    title: 'Error'
+                }
+        } as MessageContent;
+    }
+
     private async genStatusMessage(user: Member, online: number, offline: number, afk: number) {
         const fields = [];
 
@@ -330,7 +378,7 @@ export class Bot {
         return {
             embed: {
                 color: 4886754,
-                description: '肝帝排行',
+                description: `肝帝排行 - (${moment().subtract(1, 'days').format('YYYY/MM/DD')})`,
                 fields,
                 title: 'Rank'
             }
