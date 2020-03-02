@@ -22,6 +22,8 @@ Web on `localhost` and port is `8080`.
   - Get server all data
 
 # Todo
-- [ ] Web pages
+- [x] ~~Web pages~~
 - [ ] Predicting user status
 - [x] ~~Web backend~~
+- [x] ~~Command~~
+- [x] ~~Rank~~
