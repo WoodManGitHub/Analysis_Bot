@@ -95,3 +95,6 @@ databaseTransfer/
 
 # PM2
 ecosystem.config.js
+
+#Production
+production/

@@ -58,6 +58,7 @@
   },
   "exclude": [
     "Web",
-    "dist"
+    "dist",
+    "ecosystem.config.js"
   ]
 }
