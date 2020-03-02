@@ -1,5 +1,5 @@
 # Analysis_Bot
-Discord Analysis Bot (Undone)
+Discord Analysis Bot
 
 # Info
 Analyze users online, offline, AFK in voice channels.
@@ -11,19 +11,34 @@ Analyze users online, offline, AFK in voice channels.
 3. node dist
 ```
 
-# Web
-Web on `localhost` and port is `8080`.
+# Command
+The default prefix is `?`.  
+You can modify it from config.example.json.
 
-- `/day/:serverID` 
+- `?get [day|month] <userID>`  
+  - Get user online offline data.
+- `?rank [on|off]`
+  - Switch rank display.
+  - Only administrator or add userID to admin in config.example.json.
+  - The default value is off
+
+# Rank
+Daily midnight sent yesterday's online time ranking.  
+Send to the channel where the ranking instruction was sent.
+
+# Web
+Web on `localhost` and port is `8787`.
+
+- `/api/day/:serverID` 
   - Get server today data
-- `/month/:serverID`
+- `/api/month/:serverID`
   - Get server month data
-- `/all/:serverID`
+- `/api/all/:serverID`
   - Get server all data
 
 # Todo
 - [x] ~~Web pages~~
-- [ ] Predicting user status
+- [ ] Predicting user status (delay)
 - [x] ~~Web backend~~
 - [x] ~~Command~~
 - [x] ~~Rank~~
