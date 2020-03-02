@@ -59,6 +59,7 @@
   "exclude": [
     "Web",
     "dist",
-    "ecosystem.config.js"
+    "ecosystem.config.js",
+    "production"
   ]
 }
