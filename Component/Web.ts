@@ -31,10 +31,7 @@ export class Web {
         this.middlewares();
         this.registerRoutes();
         this.errorHandler();
-        // this.server.listen(this.config.port, '0.0.0.0', () => {
-        //     console.log('[Web] Ready!');
-        // });
-        this.server.listen(8788, '0.0.0.0', () => {
+        this.server.listen(this.config.port, '0.0.0.0', () => {
             console.log('[Web] Ready!');
         });
     }
