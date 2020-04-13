@@ -73,11 +73,11 @@ export class Web {
     }
 
     private async registerRoutes() {
-        this.server.get('/verify/:token', this.route(this.reCaptcha));
         this.server.get('/api', (req: Request, res: Response) => res.send('Analysis Bot Web Server'));
         this.server.get('/api/day/:serverID', this.route(this.getDay));
         this.server.get('/api/month/:serverID', this.route(this.getMonth));
         this.server.get('/api/all/:serverID', this.route(this.getAll));
+        this.server.get('/api/verify/:token', this.route(this.reCaptcha));
     }
 
     private async reCaptcha(req: Request, res: Response) {
