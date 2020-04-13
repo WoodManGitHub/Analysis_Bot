@@ -4,7 +4,7 @@ Analyze users online, offline, AFK in voice channels.
 
 # How to use
 ```
-1. Edit config.json.example and rename it config.json.
+1. Edit config.json.example and rename it config.json
 2. npm install
 3. node dist
 ```
@@ -42,3 +42,6 @@ Web on `localhost` and port is `8787`.
 - [x] ~~Web backend~~
 - [x] ~~Command~~
 - [x] ~~Rank~~
+
+# Thanks
+[jimchen5209](https://jimchen5209.me) **Provide advice and assistance**
