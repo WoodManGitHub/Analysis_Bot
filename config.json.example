@@ -12,6 +12,9 @@
     },
     "web": {
         "port": 8080,
-        "origin": "*"
+        "origin": "*",
+        "recaptcha": {
+            "secretKey": ""
+        }
     }
 }

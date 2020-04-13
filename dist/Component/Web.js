@@ -6,7 +6,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const cors_1 = __importDefault(require("cors"));
 const express_1 = __importDefault(require("express"));
 const moment_1 = __importDefault(require("moment"));
+const node_fetch_1 = __importDefault(require("node-fetch"));
 const suncalc_1 = __importDefault(require("suncalc"));
+const url_1 = require("url");
 const ERR_BAD_REQUEST = '400 Bad request!';
 const ERR_FORBIDDEN = '400 Forbidden!';
 const ERR_NOT_FOUND = '404 Not found!';
@@ -63,10 +65,30 @@ class Web {
         };
     }
     async registerRoutes() {
+        this.server.get('/verify/:token', this.route(this.reCaptcha));
         this.server.get('/api', (req, res) => res.send('Analysis Bot Web Server'));
         this.server.get('/api/day/:serverID', this.route(this.getDay));
         this.server.get('/api/month/:serverID', this.route(this.getMonth));
         this.server.get('/api/all/:serverID', this.route(this.getAll));
+    }
+    async reCaptcha(req, res) {
+        if (!req.params.token) {
+            res.status(400).json({ msg: 'Invalid token' });
+        }
+        else {
+            const data = new url_1.URLSearchParams({
+                secret: this.config.recaptcha.secretKey,
+                response: req.params.token
+            });
+            await node_fetch_1.default('https://www.google.com/recaptcha/api/siteverify', {
+                method: 'POST',
+                body: data
+            })
+                .then(response => response.json())
+                .then(data => {
+                res.json({ msg: 'OK', data });
+            });
+        }
     }
     async getDay(req, res) {
         const startTime = new Date().setHours(0, 0, 0, 0) / 1000;

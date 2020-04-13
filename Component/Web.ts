@@ -3,7 +3,9 @@ import { CommandClient } from 'eris';
 import { Application, NextFunction, Request, Response } from 'express';
 import express from 'express';
 import moment from 'moment';
+import fetch from 'node-fetch';
 import SunCalc from 'suncalc';
+import { URLSearchParams } from 'url';
 import { Core } from '..';
 import { ITime, TimeManager } from '../Core/TimeManager';
 
@@ -71,10 +73,30 @@ export class Web {
     }
 
     private async registerRoutes() {
+        this.server.get('/verify/:token', this.route(this.reCaptcha));
         this.server.get('/api', (req: Request, res: Response) => res.send('Analysis Bot Web Server'));
         this.server.get('/api/day/:serverID', this.route(this.getDay));
         this.server.get('/api/month/:serverID', this.route(this.getMonth));
         this.server.get('/api/all/:serverID', this.route(this.getAll));
+    }
+
+    private async reCaptcha(req: Request, res: Response) {
+        if (!req.params.token) {
+            res.status(400).json({ msg: 'Invalid token' });
+        } else {
+            const options = new URLSearchParams({
+                secret: this.config.recaptcha.secretKey,
+                response: req.params.token
+            });
+            await fetch('https://www.google.com/recaptcha/api/siteverify', {
+                method: 'POST',
+                body: options
+            })
+            .then(response => response.json())
+            .then(data => {
+                res.json({ msg: 'OK', data});
+            });
+        }
     }
 
     private async getDay(req: Request, res: Response) {
