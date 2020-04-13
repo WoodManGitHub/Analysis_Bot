@@ -131,6 +131,7 @@ export class Web {
     }
 
     private async processData(raw: ITime[], serverID: string, startTime: number | undefined) {
+        if (raw.length === 0) return '';
         const dataRaw: { [key: string]: Array<{ time: string, type: string }> } = {};
         const groups: Array<{ id: string, content: string }> = [];
         // const dataSets: Array<{ content: string, start: string, end: string, group: string, type: string, className: string, title: string }> = [];

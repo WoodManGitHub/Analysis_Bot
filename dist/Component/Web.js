@@ -116,6 +116,8 @@ class Web {
         });
     }
     async processData(raw, serverID, startTime) {
+        if (raw.length === 0)
+            return '';
         const dataRaw = {};
         const groups = [];
         const dataSets = [];
