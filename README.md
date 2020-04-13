@@ -42,3 +42,6 @@ Web on `localhost` and port is `8787`.
 - [x] ~~Web backend~~
 - [x] ~~Command~~
 - [x] ~~Rank~~
+
+# Thanks
+[jimchen5209](https://jimchen5209.me) **Provide advice and assistance**
