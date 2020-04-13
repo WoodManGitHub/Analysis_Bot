@@ -76,13 +76,13 @@ class Web {
             res.status(400).json({ msg: 'Invalid token' });
         }
         else {
-            const data = new url_1.URLSearchParams({
+            const options = new url_1.URLSearchParams({
                 secret: this.config.recaptcha.secretKey,
                 response: req.params.token
             });
             await node_fetch_1.default('https://www.google.com/recaptcha/api/siteverify', {
                 method: 'POST',
-                body: data
+                body: options
             })
                 .then(response => response.json())
                 .then(data => {
