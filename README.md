@@ -10,6 +10,8 @@ Analyze users online, offline, AFK in voice channels.
 2. npm install
 3. node dist
 ```
+Or you can copy dist and rename it production  
+Then run `pm2 reload ecosystem.config.js`
 
 # Command
 The default prefix is `?`.  
