@@ -2,6 +2,7 @@ import cors from 'cors';
 import { CommandClient } from 'eris';
 import { Application, NextFunction, Request, Response } from 'express';
 import express from 'express';
+import helmet from 'helmet';
 import moment from 'moment';
 import fetch from 'node-fetch';
 import SunCalc from 'suncalc';
@@ -41,6 +42,7 @@ export class Web {
     private async middlewares() {
         this.server.use(express.json());
         this.server.use(cors({ origin: this.config.origin }));
+        this.server.use(helmet());
     }
 
     private async errorHandler() {

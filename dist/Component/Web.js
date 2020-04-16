@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const cors_1 = __importDefault(require("cors"));
 const express_1 = __importDefault(require("express"));
+const helmet_1 = __importDefault(require("helmet"));
 const moment_1 = __importDefault(require("moment"));
 const node_fetch_1 = __importDefault(require("node-fetch"));
 const suncalc_1 = __importDefault(require("suncalc"));
@@ -33,6 +34,7 @@ class Web {
     async middlewares() {
         this.server.use(express_1.default.json());
         this.server.use(cors_1.default({ origin: this.config.origin }));
+        this.server.use(helmet_1.default());
     }
     async errorHandler() {
         this.server.use((err, req, res, next) => {
