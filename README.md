@@ -1,5 +1,5 @@
 # Analysis_Bot
-You can check out introduction to this repo on my blog: [here](https://blog.woodman.pw/2020/03/11/%E5%B0%88%E6%A1%88%E4%BB%8B%E7%B4%B9-Discord-Analysis-Bot/)  
+You can check out introduction to this repo on my blog: [here](https://blog.woodman.w/2020/03/11/%E5%B0%88%E6%A1%88%E4%BB%8B%E7%B4%B9-Discord-Analysis-Bot/)  
 Analyze users online, offline, AFK in voice channels.
 
 # How to use
@@ -37,8 +37,11 @@ Web on `localhost` and port is `8787`.
   - Get server all data
 
 # Todo
+- [ ] Change monthly to weekly
+- [ ] Change all to time search
+- [ ] Speed up loading
 - [x] ~~Web pages~~
-- [ ] Predicting user status (delay)
+- [ ] ~~Predicting user status (Abandon)~~
 - [x] ~~Web backend~~
 - [x] ~~Command~~
 - [x] ~~Rank~~
