@@ -151,166 +151,176 @@ export class Web {
             if (dataRaw[key] === undefined) return;
 
             const rawData = dataRaw[key];
-            const user = (await this.Bot.getRESTGuildMember(serverID, key));
-            const userName = user.nick ? user.nick : user.username;
-            let lastActivity: { time: string, type: string } | undefined;
+            await this.Bot.getRESTGuildMember(serverID, key).then(async (user: any) => {
+                const userName = user.nick ? user.nick : user.username;
+                let lastActivity: { time: string, type: string } | undefined;
 
-            for (const activity of rawData) {
-                if (lastActivity === undefined) {
-                    if (startTime !== undefined) {
-                        const lastData = await this.timeManager.getLastDataByUser(serverID, key, startTime);
-                        if (lastData.length !== 0) {
-                            lastActivity = { time: moment.unix(startTime).format('YYYY-MM-DD HH:mm:ss'), type: lastData[0].type };
+                for (const activity of rawData) {
+                    if (lastActivity === undefined) {
+                        if (startTime !== undefined) {
+                            const lastData = await this.timeManager.getLastDataByUser(serverID, key, startTime);
+                            if (lastData.length !== 0) {
+                                lastActivity = { time: moment.unix(startTime).format('YYYY-MM-DD HH:mm:ss'), type: lastData[0].type };
+                            } else {
+                                lastActivity = activity;
+                                continue;
+                            }
                         } else {
                             lastActivity = activity;
                             continue;
                         }
-                    } else {
-                        lastActivity = activity;
-                        continue;
+                    }
+                    let keepLastActivity = false;
+                    switch (activity.type) {
+                        case 'join': {
+                            switch (lastActivity.type) {
+                                case 'join': {
+                                    keepLastActivity = true;
+                                    break;
+                                }
+                                case 'leave': {
+                                    // tslint:disable-next-line: max-line-length
+                                    dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'offline', title: `Offline<br>${lastActivity.time} - ${activity.time}`});
+                                    break;
+                                }
+                                case 'afk': {
+                                    dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'afk', title: `AFK<br>${lastActivity.time} - ${activity.time}`});
+                                    break;
+                                }
+                                case 'back': {
+                                    keepLastActivity = true;
+                                    break;
+                                }
+                                default: {
+                                    // tslint:disable-next-line: max-line-length
+                                    dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'unknown', title: `Unknown<br>${lastActivity.time} - ${activity.time}`});
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                        case 'leave': {
+                            switch (lastActivity.type) {
+                                case 'join': {
+                                    dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'online', title: `Online<br>${lastActivity.time} - ${activity.time}`});
+                                    break;
+                                }
+                                case 'leave': {
+                                    keepLastActivity = true;
+                                    break;
+                                }
+                                case 'afk': {
+                                    dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'afk', title: `AFK<br>${lastActivity.time} - ${activity.time}`});
+                                    break;
+                                }
+                                case 'back': {
+                                    dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'online', title: `Online<br>${lastActivity.time} - ${activity.time}`});
+                                    break;
+                                }
+                                default: {
+                                    // tslint:disable-next-line: max-line-length
+                                    dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'unknown', title: `Unknown<br>${lastActivity.time} - ${activity.time}`});
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                        case 'afk': {
+                            switch (lastActivity.type) {
+                                case 'join': {
+                                    dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'online', title: `Online<br>${lastActivity.time} - ${activity.time}`});
+                                    break;
+                                }
+                                case 'leave': {
+                                    // tslint:disable-next-line: max-line-length
+                                    dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'offline', title: `Offline<br>${lastActivity.time} - ${activity.time}`});
+                                    break;
+                                }
+                                case 'afk': {
+                                    keepLastActivity = true;
+                                    break;
+                                }
+                                case 'back': {
+                                    dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'online', title: `Online<br>${lastActivity.time} - ${activity.time}`});
+                                    break;
+                                }
+                                default: {
+                                    // tslint:disable-next-line: max-line-length
+                                    dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'unknown', title: `Unknown<br>${lastActivity.time} - ${activity.time}`});
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                        case 'back': {
+                            switch (lastActivity.type) {
+                                case 'join': {
+                                    keepLastActivity = true;
+                                    break;
+                                }
+                                case 'leave': {
+                                    // tslint:disable-next-line: max-line-length
+                                    dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'offline', title: `Offline<br>${lastActivity.time} - ${activity.time}`});
+                                    break;
+                                }
+                                case 'afk': {
+                                    dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'afk', title: `AFK<br>${lastActivity.time} - ${activity.time}`});
+                                    break;
+                                }
+                                case 'back': {
+                                    keepLastActivity = true;
+                                    break;
+                                }
+                                default: {
+                                    // tslint:disable-next-line: max-line-length
+                                    dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'unknown', title: `Unknown<br>${lastActivity.time} - ${activity.time}`});
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                        default: {
+                            dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'unknown', title: `Unknown<br>${lastActivity.time} - ${activity.time}`});
+                            break;
+                        }
+                    }
+                    if (!keepLastActivity) lastActivity = activity;
+                }
+
+                // last record
+                if (lastActivity !== undefined) {
+                    const now = moment().format('YYYY-MM-DD HH:mm:ss');
+
+                    // tempData.push([lastActivity.time, 'Unknown', now]);
+                    switch (lastActivity.type) {
+                        case 'join': {
+                            dataSets.push({content: '', start: lastActivity.time, end: now, group: userName, className: 'online', title: `Online<br>${lastActivity.time} - ${now}`});
+                            break;
+                        }
+                        case 'leave': {
+                            dataSets.push({content: '', start: lastActivity.time, end: now, group: userName, className: 'offline', title: `Offline<br>${lastActivity.time} - ${now}`});
+                            break;
+                        }
+                        case 'afk': {
+                            dataSets.push({content: '', start: lastActivity.time, end: now, group: userName, className: 'afk', title: `AFK<br>${lastActivity.time} - ${now}`});
+                            break;
+                        }
+                        case 'back': {
+                            dataSets.push({content: '', start: lastActivity.time, end: now, group: userName, className: 'online', title: `Online<br>${lastActivity.time} - ${now}`});
+                            break;
+                        }
+                        default: {
+                            break;
+                        }
                     }
                 }
-                let keepLastActivity = false;
-                switch (activity.type) {
-                    case 'join': {
-                        switch (lastActivity.type) {
-                            case 'join': {
-                                keepLastActivity = true;
-                                break;
-                            }
-                            case 'leave': {
-                                dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'offline', title: `Offline<br>${lastActivity.time} - ${activity.time}`});
-                                break;
-                            }
-                            case 'afk': {
-                                dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'afk', title: `AFK<br>${lastActivity.time} - ${activity.time}`});
-                                break;
-                            }
-                            case 'back': {
-                                keepLastActivity = true;
-                                break;
-                            }
-                            default: {
-                                dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'unknown', title: `Unknown<br>${lastActivity.time} - ${activity.time}`});
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                    case 'leave': {
-                        switch (lastActivity.type) {
-                            case 'join': {
-                                dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'online', title: `Online<br>${lastActivity.time} - ${activity.time}`});
-                                break;
-                            }
-                            case 'leave': {
-                                keepLastActivity = true;
-                                break;
-                            }
-                            case 'afk': {
-                                dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'afk', title: `AFK<br>${lastActivity.time} - ${activity.time}`});
-                                break;
-                            }
-                            case 'back': {
-                                dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'online', title: `Online<br>${lastActivity.time} - ${activity.time}`});
-                                break;
-                            }
-                            default: {
-                                dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'unknown', title: `Unknown<br>${lastActivity.time} - ${activity.time}`});
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                    case 'afk': {
-                        switch (lastActivity.type) {
-                            case 'join': {
-                                dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'online', title: `Online<br>${lastActivity.time} - ${activity.time}`});
-                                break;
-                            }
-                            case 'leave': {
-                                dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'offline', title: `Offline<br>${lastActivity.time} - ${activity.time}`});
-                                break;
-                            }
-                            case 'afk': {
-                                keepLastActivity = true;
-                                break;
-                            }
-                            case 'back': {
-                                dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'online', title: `Online<br>${lastActivity.time} - ${activity.time}`});
-                                break;
-                            }
-                            default: {
-                                dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'unknown', title: `Unknown<br>${lastActivity.time} - ${activity.time}`});
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                    case 'back': {
-                        switch (lastActivity.type) {
-                            case 'join': {
-                                keepLastActivity = true;
-                                break;
-                            }
-                            case 'leave': {
-                                dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'offline', title: `Offline<br>${lastActivity.time} - ${activity.time}`});
-                                break;
-                            }
-                            case 'afk': {
-                                dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'afk', title: `AFK<br>${lastActivity.time} - ${activity.time}`});
-                                break;
-                            }
-                            case 'back': {
-                                keepLastActivity = true;
-                                break;
-                            }
-                            default: {
-                                dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'unknown', title: `Unknown<br>${lastActivity.time} - ${activity.time}`});
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                    default: {
-                        dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'unknown', title: `Unknown<br>${lastActivity.time} - ${activity.time}`});
-                        break;
-                    }
-                }
-                if (!keepLastActivity) lastActivity = activity;
-            }
 
-            // last record
-            if (lastActivity !== undefined) {
-                const now = moment().format('YYYY-MM-DD HH:mm:ss');
-
-                // tempData.push([lastActivity.time, 'Unknown', now]);
-                switch (lastActivity.type) {
-                    case 'join': {
-                        dataSets.push({content: '', start: lastActivity.time, end: now, group: userName, className: 'online', title: `Online<br>${lastActivity.time} - ${now}`});
-                        break;
-                    }
-                    case 'leave': {
-                        dataSets.push({content: '', start: lastActivity.time, end: now, group: userName, className: 'offline', title: `Offline<br>${lastActivity.time} - ${now}`});
-                        break;
-                    }
-                    case 'afk': {
-                        dataSets.push({content: '', start: lastActivity.time, end: now, group: userName, className: 'afk', title: `AFK<br>${lastActivity.time} - ${now}`});
-                        break;
-                    }
-                    case 'back': {
-                        dataSets.push({content: '', start: lastActivity.time, end: now, group: userName, className: 'online', title: `Online<br>${lastActivity.time} - ${now}`});
-                        break;
-                    }
-                    default: {
-                        break;
-                    }
-                }
-            }
-
-            groups.push({
-                id: userName,
-                content: `<img class="avatar" src="${user.avatarURL}" /><span class="name">${(user.nick ? user.nick : user.username).substr(0, 20)}</span>`
+                groups.push({
+                    id: userName,
+                    content: `<img class="avatar" src="${user.avatarURL}" /><span class="name">${(user.nick ? user.nick : user.username).substr(0, 20)}</span>`
+                });
+            }).catch(err => {
+                return;
             });
         }
 
