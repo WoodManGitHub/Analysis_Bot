@@ -37,9 +37,9 @@ Web on `localhost` and port is `8787`.
   - Get server all data
 
 # Todo
-- [ ] Change monthly to weekly
 - [ ] Change all to time search
 - [ ] Speed up loading
+- [x] ~~Change monthly to weekly~~
 - [x] ~~Web pages~~
 - [ ] ~~Predicting user status (Abandon)~~
 - [x] ~~Web backend~~
