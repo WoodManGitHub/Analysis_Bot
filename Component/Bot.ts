@@ -102,7 +102,6 @@ export class Bot {
         const user = (await this.bot.getRESTGuildMember(msg.member!.guild.id, userID));
         let startTime: number;
         let endTime: number;
-        // const time = new Date();
         const oneDayTime = 24 * 60 * 60;
 
         switch (type) {
