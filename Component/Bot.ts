@@ -82,7 +82,7 @@ export class Bot {
             argsRequired: true,
             description: 'Get user online offline data.',
             guildOnly: true,
-            usage: '[day|month] <userID>',
+            usage: '[day|week|month] <userID>',
         });
         this.bot.registerCommand('rank', this.commandRank.bind(this), {
             argsRequired: true,
@@ -102,18 +102,28 @@ export class Bot {
         const user = (await this.bot.getRESTGuildMember(msg.member!.guild.id, userID));
         let startTime: number;
         let endTime: number;
+        // const time = new Date();
+        const oneDayTime = 24 * 60 * 60;
 
         switch (type) {
             case 'day':
                 startTime = new Date().setHours(0, 0, 0, 0) / 1000;
-                endTime = startTime + 86400;
+                endTime = startTime + oneDayTime;
                 break;
             case 'month':
-                const time = new Date();
-                const year = time.getFullYear();
-                const month = time.getMonth() + 1;
+                const year = new Date().getFullYear();
+                const month = new Date().getMonth() + 1;
                 startTime = new Date(year, month, 0).setDate(1) / 1000;
                 endTime = new Date(year, month, 0).getTime() / 1000;
+                break;
+            case 'week':
+                const midnight = new Date().setHours(0, 0, 0, 0) / 1000;
+                const day = new Date().getDay();
+                const monday = (midnight - (day - 1) * oneDayTime);
+                const sunday = (midnight + (7 - day) * oneDayTime);
+                startTime = monday;
+                endTime = sunday;
+                break;
         }
 
         const Time = await this.timeManager.getByUser(msg.member!.guild.id, userID, startTime!, endTime!);
