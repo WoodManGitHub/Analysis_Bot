@@ -15,7 +15,7 @@ Then run `pm2 reload ecosystem.config.js`
 The default prefix is `?`.  
 You can modify it from config.example.json.
 
-- `?get [day|month] <userID>`  
+- `?get [day|week|month] <userID>`  
   - Get user online offline data.
 - `?rank [on|off]`
   - Switch rank display.
