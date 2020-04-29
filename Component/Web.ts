@@ -77,7 +77,7 @@ export class Web {
     private async registerRoutes() {
         this.server.get('/api', (req: Request, res: Response) => res.send('Analysis Bot Web Server'));
         this.server.get('/api/day/:serverID', this.route(this.getDay));
-        this.server.get('/api/month/:serverID', this.route(this.getMonth));
+        this.server.get('/api/week/:serverID', this.route(this.getWeek));
         this.server.get('/api/all/:serverID', this.route(this.getAll));
         this.server.get('/api/verify/:token', this.route(this.reCaptcha));
     }
@@ -111,15 +111,16 @@ export class Web {
         });
     }
 
-    private async getMonth(req: Request, res: Response) {
+    private async getWeek(req: Request, res: Response) {
+        const oneDayTime = 24 * 60 * 60;
         const time = new Date();
-        const year = time.getFullYear();
-        const month = time.getMonth() + 1;
-        const startTime = new Date(year, month, 0).setDate(1) / 1000;
-        const endTime = new Date(year, month, 0).getTime() / 1000;
-        const monthTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
+        const midnight = time.setHours(0, 0, 0, 0) / 1000;
+        const day = time.getDay();
+        const startTime = (midnight - (day - 1) * oneDayTime);
+        const endTime = (midnight + (7 - day) * oneDayTime);
+        const weekTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
 
-        this.processData(monthTime, req.params.serverID, startTime).then(data => {
+        this.processData(weekTime, req.params.serverID, startTime).then(data => {
             res.json({ msg: 'OK', data });
         });
     }
