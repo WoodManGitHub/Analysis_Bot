@@ -58,11 +58,6 @@ class Bot {
         this.bot.connect();
     }
     async registerCommand() {
-        this.bot.registerCommand('predict', this.commandPredict.bind(this), {
-            argsRequired: true,
-            description: 'Predicting the status of user.',
-            guildOnly: true,
-        });
         this.bot.registerCommand('get', this.commandGet.bind(this), {
             argsRequired: true,
             description: 'Get user online offline data.',
@@ -75,9 +70,6 @@ class Bot {
             guildOnly: true,
             usage: '[on|off]',
         });
-    }
-    async commandPredict(msg, args) {
-        msg.channel.createMessage('Test function');
     }
     async commandGet(msg, args) {
         const type = args[0];
