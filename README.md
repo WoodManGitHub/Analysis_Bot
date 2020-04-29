@@ -30,9 +30,9 @@ Send to the channel where the ranking instruction was sent.
 Web on `localhost` and port is `8787`.
 
 - `/api/day/:serverID` 
-  - Get server today data
+  - Get server today data (From 0:00 to the next day at 0:00)
 - `/api/week/:serverID`
-  - Get server month data
+  - Get server week data (From Monday to Sunday)
 - `/api/all/:serverID`
   - Get server all data
 
