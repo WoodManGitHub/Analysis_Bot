@@ -31,7 +31,7 @@ Web on `localhost` and port is `8787`.
 
 - `/api/day/:serverID` 
   - Get server today data
-- `/api/month/:serverID`
+- `/api/week/:serverID`
   - Get server month data
 - `/api/all/:serverID`
   - Get server all data
