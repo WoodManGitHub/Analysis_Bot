@@ -72,6 +72,10 @@ class Web {
         this.server.get('/api/week/:serverID', this.route(this.getWeek));
         this.server.get('/api/all/:serverID', this.route(this.getAll));
         this.server.get('/api/verify/:token', this.route(this.reCaptcha));
+        this.server.get('*', this.route(this.errorURL));
+    }
+    async errorURL(req, res) {
+        res.status(404).json({ msg: 'Page not found' });
     }
     async reCaptcha(req, res) {
         if (!req.params.token) {
