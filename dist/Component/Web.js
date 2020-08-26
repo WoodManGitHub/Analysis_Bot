@@ -50,11 +50,9 @@ class Web {
         const reqURL = url_1.parse(req.url).query;
         const reg = /\[\w+\]/;
         if (reg.test(reqURL)) {
-            return next(Error('HTTP400'));
+            next(new Error('HTTP400'));
         }
-        else {
-            return next();
-        }
+        next();
     }
     async errorHandler() {
         this.server.use((err, req, res, next) => {

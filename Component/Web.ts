@@ -59,7 +59,7 @@ export class Web {
         const reqURL = parse(req.url).query as string;
         const reg = /\[\w+\]/;
         if (reg.test(reqURL)) {
-            return next(new Error('HTTP400'));
+            next(new Error('HTTP400'));
         }
         next();
     }
