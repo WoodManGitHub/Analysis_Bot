@@ -13,6 +13,7 @@ import { ITime, TimeManager } from '../Core/TimeManager';
 const ERR_BAD_REQUEST = '400 Bad request!';
 const ERR_FORBIDDEN = '400 Forbidden!';
 const ERR_NOT_FOUND = '404 Not found!';
+const ERR_SERVER_ERROR = '500 Internal Server Error';
 
 export class Web {
     private config: any;
@@ -68,6 +69,9 @@ export class Web {
                     error: ERR_NOT_FOUND
                 });
             } else {
+                res.status(500).json({
+                    error: ERR_SERVER_ERROR
+                });
                 next(err);
             }
         });

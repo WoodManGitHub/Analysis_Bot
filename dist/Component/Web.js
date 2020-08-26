@@ -13,6 +13,7 @@ const url_1 = require("url");
 const ERR_BAD_REQUEST = '400 Bad request!';
 const ERR_FORBIDDEN = '400 Forbidden!';
 const ERR_NOT_FOUND = '404 Not found!';
+const ERR_SERVER_ERROR = '500 Server error';
 class Web {
     constructor(core) {
         this.config = core.config.web;
@@ -62,6 +63,9 @@ class Web {
                 });
             }
             else {
+                res.status(500).json({
+                    error: ERR_SERVER_ERROR
+                });
                 next(err);
             }
         });
