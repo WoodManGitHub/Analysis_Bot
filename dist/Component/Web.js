@@ -153,7 +153,7 @@ class Web {
             if (dataRaw[item.userID] === undefined)
                 dataRaw[item.userID] = [];
             dataRaw[item.userID].push({
-                time: moment_1.default.unix(item.timeStrap).format('YYYY-MM-DD HH:mm:ss'),
+                time: moment_1.default.unix(item.timeStamp).format('YYYY-MM-DD HH:mm:ss'),
                 type: item.type
             });
         }
@@ -323,7 +323,7 @@ class Web {
                 return;
             });
         }
-        let time = (startTime !== undefined) ? startTime : raw[0].timeStrap;
+        let time = (startTime !== undefined) ? startTime : raw[0].timeStamp;
         const endTime = Math.round(Date.now() / 1000);
         for (; time < endTime; time += 86400) {
             const date = new Date(time * 1000);
@@ -334,7 +334,7 @@ class Web {
         }
         return {
             properties: {
-                startTime: moment_1.default.unix((startTime !== undefined) ? startTime : raw[0].timeStrap).format('YYYY-MM-DD HH:mm:ss'),
+                startTime: moment_1.default.unix((startTime !== undefined) ? startTime : raw[0].timeStamp).format('YYYY-MM-DD HH:mm:ss'),
                 endTime: moment_1.default().format('YYYY-MM-DD HH:mm:ss')
             },
             groups,

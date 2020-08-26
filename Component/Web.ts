@@ -171,7 +171,7 @@ export class Web {
         for (const item of raw) {
             if (dataRaw[item.userID] === undefined) dataRaw[item.userID] = [];
             dataRaw[item.userID].push({
-                time: moment.unix(item.timeStrap).format('YYYY-MM-DD HH:mm:ss'),
+                time: moment.unix(item.timeStamp).format('YYYY-MM-DD HH:mm:ss'),
                 type: item.type
             });
         }
@@ -354,7 +354,7 @@ export class Web {
         }
 
         // Sunrise Sunset
-        let time = (startTime !== undefined) ? startTime : raw[0].timeStrap;
+        let time = (startTime !== undefined) ? startTime : raw[0].timeStamp;
         const endTime = Math.round(Date.now() / 1000);
 
         for (; time < endTime; time += 86400) {
@@ -367,7 +367,7 @@ export class Web {
 
         return {
             properties: {
-                startTime: moment.unix((startTime !== undefined) ? startTime : raw[0].timeStrap).format('YYYY-MM-DD HH:mm:ss'),
+                startTime: moment.unix((startTime !== undefined) ? startTime : raw[0].timeStamp).format('YYYY-MM-DD HH:mm:ss'),
                 endTime: moment().format('YYYY-MM-DD HH:mm:ss')
             },
             groups,

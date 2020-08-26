@@ -34,36 +34,36 @@ export class Bot {
         this.bot.on('voiceChannelJoin', (member: Member, newChannel: VoiceChannel) => {
             const serverID = newChannel.guild.id;
             const userID = member.id;
-            const joinTimestrap = Math.round(Date.now() / 1000);
+            const joinTimeStamp = Math.round(Date.now() / 1000);
             const afkChannel = newChannel.guild.afkChannelID;
 
             if (member.bot) return;
             const type = (afkChannel != null) ? ((newChannel.id === afkChannel) ? 'afk' : 'join') : 'join';
-            this.timeManager.create(serverID, userID, joinTimestrap, type);
+            this.timeManager.create(serverID, userID, joinTimeStamp, type);
         });
 
         this.bot.on('voiceChannelLeave', (member: Member, oldChannel: VoiceChannel) => {
             const serverID = oldChannel.guild.id;
             const userID = member.id;
-            const leaveTimestrap = Math.round(Date.now() / 1000);
+            const leaveTimeStamp = Math.round(Date.now() / 1000);
 
             if (member.bot) return;
-            this.timeManager.create(serverID, userID, leaveTimestrap, 'leave');
+            this.timeManager.create(serverID, userID, leaveTimeStamp, 'leave');
         });
 
         this.bot.on('voiceChannelSwitch', (member: Member, newChannel: VoiceChannel, oldChannel: VoiceChannel) => {
             const afkChannel = newChannel.guild.afkChannelID;
             const serverID = newChannel.guild.id;
             const userID = member.id;
-            const tempTimestrap = Math.round(Date.now() / 1000);
+            const tempTimeStamp = Math.round(Date.now() / 1000);
 
             if (member.bot) return;
             if (afkChannel === null) return;
 
             if (newChannel.id === afkChannel) {
-                this.timeManager.create(serverID, userID, tempTimestrap, 'afk');
+                this.timeManager.create(serverID, userID, tempTimeStamp, 'afk');
             } else if (oldChannel.id === afkChannel) {
-                this.timeManager.create(serverID, userID, tempTimestrap, 'back');
+                this.timeManager.create(serverID, userID, tempTimeStamp, 'back');
             }
         });
 
@@ -180,7 +180,7 @@ export class Bot {
         for (const item of raw) {
             if (dataRaw[item.userID] === undefined) dataRaw[item.userID] = [];
             dataRaw[item.userID].push({
-                time: moment.unix(item.timeStrap).format('YYYY-MM-DD HH:mm:ss'),
+                time: moment.unix(item.timeStamp).format('YYYY-MM-DD HH:mm:ss'),
                 type: item.type
             });
         }
