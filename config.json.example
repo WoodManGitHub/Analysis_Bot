@@ -12,6 +12,8 @@
     },
     "web": {
         "port": 8080,
+        "devPort": 8081,
+        "devMode": false,
         "origin": "*",
         "recaptcha": {
             "secretKey": ""

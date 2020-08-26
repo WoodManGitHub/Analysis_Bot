@@ -27,7 +27,15 @@ class Web {
         this.middlewares();
         this.registerRoutes();
         this.errorHandler();
-        this.server.listen(this.config.port, '0.0.0.0', () => {
+        if (this.config.devMode) {
+            this.runServer(this.config.devPort);
+        }
+        else {
+            this.runServer(this.config.port);
+        }
+    }
+    runServer(port) {
+        this.server.listen(port, '0.0.0.0', () => {
             console.log('[Web] Ready!');
         });
     }
@@ -71,6 +79,7 @@ class Web {
         this.server.get('/api/day/:serverID', this.route(this.getDay));
         this.server.get('/api/week/:serverID', this.route(this.getWeek));
         this.server.get('/api/all/:serverID', this.route(this.getAll));
+        this.server.get('/api/custom/:serverID', this.route(this.getCustomTime));
         this.server.get('/api/verify/:token', this.route(this.reCaptcha));
         this.server.get('*', this.route(this.errorURL));
     }
@@ -121,6 +130,18 @@ class Web {
         this.processData(allTime, req.params.serverID, undefined).then(data => {
             res.json({ msg: 'OK', data });
         });
+    }
+    async getCustomTime(req, res) {
+        if (req.query) {
+            const startTime = parseInt(req.query.start, 10);
+            const endTime = parseInt(req.query.end, 10);
+            if (startTime && endTime && startTime < endTime) {
+                const customTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
+                this.processData(customTime, req.params.serverID, startTime).then(data => {
+                    res.json({ msg: 'OK', data });
+                });
+            }
+        }
     }
     async processData(raw, serverID, startTime) {
         if (raw.length === 0)
