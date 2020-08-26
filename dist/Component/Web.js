@@ -13,7 +13,7 @@ const url_1 = require("url");
 const ERR_BAD_REQUEST = '400 Bad request!';
 const ERR_FORBIDDEN = '400 Forbidden!';
 const ERR_NOT_FOUND = '404 Not found!';
-const ERR_SERVER_ERROR = '500 Server error';
+const ERR_SERVER_ERROR = '500 Internal Server Error';
 class Web {
     constructor(core) {
         this.config = core.config.web;
@@ -44,6 +44,17 @@ class Web {
         this.server.use(express_1.default.json());
         this.server.use(cors_1.default({ origin: this.config.origin }));
         this.server.use(helmet_1.default());
+        this.server.use(this.checkRequst);
+    }
+    async checkRequst(req, res, next) {
+        const reqURL = url_1.parse(req.url).query;
+        const reg = /\[\w+\]/;
+        if (reg.test(reqURL)) {
+            return next(Error('HTTP400'));
+        }
+        else {
+            return next();
+        }
     }
     async errorHandler() {
         this.server.use((err, req, res, next) => {
@@ -88,7 +99,7 @@ class Web {
         this.server.get('*', this.route(this.errorURL));
     }
     async errorURL(req, res) {
-        res.status(404).json({ msg: 'Page not found' });
+        throw new Error('HTTP404');
     }
     async reCaptcha(req, res) {
         if (!req.params.token) {
@@ -136,15 +147,16 @@ class Web {
         });
     }
     async getCustomTime(req, res) {
-        if (req.query) {
-            const startTime = parseInt(req.query.start, 10);
-            const endTime = parseInt(req.query.end, 10);
-            if (startTime && endTime && startTime < endTime) {
-                const customTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
-                this.processData(customTime, req.params.serverID, startTime).then(data => {
-                    res.json({ msg: 'OK', data });
-                });
-            }
+        const startTime = parseInt(req.query.start, 10);
+        const endTime = parseInt(req.query.end, 10);
+        if (startTime && endTime && startTime < endTime) {
+            const customTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
+            this.processData(customTime, req.params.serverID, startTime).then(data => {
+                res.json({ msg: 'OK', data });
+            });
+        }
+        else {
+            res.json({ msg: 'No Data' });
         }
     }
     async processData(raw, serverID, startTime) {

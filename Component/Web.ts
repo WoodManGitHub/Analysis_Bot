@@ -6,7 +6,7 @@ import helmet from 'helmet';
 import moment from 'moment';
 import fetch from 'node-fetch';
 import SunCalc from 'suncalc';
-import { URLSearchParams } from 'url';
+import { parse, URLSearchParams } from 'url';
 import { Core } from '..';
 import { ITime, TimeManager } from '../Core/TimeManager';
 
@@ -52,6 +52,16 @@ export class Web {
         this.server.use(express.json());
         this.server.use(cors({ origin: this.config.origin }));
         this.server.use(helmet());
+        this.server.use(this.checkRequst);
+    }
+
+    private async checkRequst(req: Request, res: Response, next: NextFunction) {
+        const reqURL = parse(req.url).query as string;
+        const reg = /\[\w+\]/;
+        if (reg.test(reqURL)) {
+            return next(new Error('HTTP400'));
+        }
+        next();
     }
 
     private async errorHandler() {
@@ -97,7 +107,7 @@ export class Web {
     }
 
     private async errorURL(req: Request, res: Response) {
-        res.status(404).json({ msg: 'Page not found' });
+        throw new Error('HTTP404');
     }
 
     private async reCaptcha(req: Request, res: Response) {
@@ -152,16 +162,16 @@ export class Web {
     }
 
     private async getCustomTime(req: Request, res: Response) {
-        if (req.query) {
-            const startTime: number = parseInt(req.query.start as string, 10);
-            const endTime: number = parseInt(req.query.end as string, 10);
+        const startTime: number = parseInt(req.query.start as string, 10);
+        const endTime: number = parseInt(req.query.end as string, 10);
 
-            if (startTime && endTime && startTime < endTime) {
-                const customTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
-                this.processData(customTime, req.params.serverID, startTime).then(data => {
-                    res.json({ msg: 'OK', data });
-                });
-            }
+        if (startTime && endTime && startTime < endTime) {
+            const customTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
+            this.processData(customTime, req.params.serverID, startTime).then(data => {
+                res.json({ msg: 'OK', data });
+            });
+        } else {
+            res.json({ msg: 'No Data' });
         }
     }
 
