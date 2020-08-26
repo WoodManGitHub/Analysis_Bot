@@ -33,8 +33,10 @@ Web on `localhost` and port is `8787`.
   - Get server today data (From 0:00 to the next day at 0:00)
 - `/api/week/:serverID`
   - Get server week data (From Monday to Sunday)
-- `/api/all/:serverID`
-  - Get server all data
+- ~~`/api/all/:serverID`~~
+  - ~~Get server all data~~ (Remove)
+- `/api/custom/:serverID?start=<unixTime>&end=<unixTime>`
+  - Get server custom time data
 
 # Todo
 - [ ] Change all to time search
