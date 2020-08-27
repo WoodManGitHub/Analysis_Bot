@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
 const mongodb_1 = require("mongodb");
-exports.ERR_DB_NOT_INIT = Error('Database is not initialized');
+exports.ERR_DB_NOT_INIT = Error('MongoDB is not initialized');
 class MongoDB extends events_1.EventEmitter {
     constructor(config) {
         super();

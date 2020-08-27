@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { Db, MongoClient } from 'mongodb';
 
-export const ERR_DB_NOT_INIT = Error('Database is not initialized');
+export const ERR_DB_NOT_INIT = Error('MongoDB is not initialized');
 
 // tslint:disable-next-line:interface-name
 export declare interface MongoDB {
