@@ -36,6 +36,7 @@ export class Web {
         this.registerRoutes();
         this.errorHandler();
         if (this.config.devMode) {
+            console.log('[Web] Dev Mode: ON');
             this.runServer(this.config.devPort);
         } else {
             this.runServer(this.config.port);
