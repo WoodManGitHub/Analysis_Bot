@@ -404,6 +404,7 @@ export class Bot {
     private rankCron() {
         schedule.scheduleJob('0 0 * * *', async () => {
             const settings = await this.rankManager.getAll();
+
             settings.forEach(async setting => {
                 if (setting.rankDisplay) {
                     const endTime = new Date().setHours(0, 0, 0, 0) / 1000;
