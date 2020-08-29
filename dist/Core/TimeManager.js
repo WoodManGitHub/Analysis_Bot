@@ -40,6 +40,11 @@ class TimeManager {
             throw MongoDB_1.ERR_DB_NOT_INIT;
         return this.database.find({ serverID, userID, timeStamp: { $lt: priorTo } }).sort({ timeStamp: -1 }).limit(1).toArray();
     }
+    async getDataByKeyword(keyword) {
+        if (!this.database)
+            throw MongoDB_1.ERR_DB_NOT_INIT;
+        return this.database.distinct(keyword);
+    }
 }
 exports.TimeManager = TimeManager;
 //# sourceMappingURL=TimeManager.js.map

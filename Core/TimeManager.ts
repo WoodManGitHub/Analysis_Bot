@@ -56,4 +56,10 @@ export class TimeManager {
 
         return this.database.find({ serverID, userID, timeStamp: { $lt: priorTo } }).sort({ timeStamp: -1 }).limit(1).toArray();
     }
+
+    public async getDataByKeyword(keyword: string) {
+        if (!this.database) throw ERR_DB_NOT_INIT;
+
+        return this.database.distinct(keyword);
+    }
 }
