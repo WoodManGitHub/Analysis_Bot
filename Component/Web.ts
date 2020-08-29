@@ -8,6 +8,7 @@ import fetch from 'node-fetch';
 import SunCalc from 'suncalc';
 import { parse, URLSearchParams } from 'url';
 import { Core } from '..';
+import { CacheManager } from '../Core/CacheManager';
 import { ITime, TimeManager } from '../Core/TimeManager';
 
 const ERR_BAD_REQUEST = '400 Bad request!';
@@ -19,11 +20,13 @@ export class Web {
     private config: any;
     private server: Application;
     private timeManager: TimeManager;
+    private cacheManager: CacheManager;
     private Bot: CommandClient;
 
     constructor(core: Core) {
         this.config = core.config.web;
         this.timeManager = core.TimeManager;
+        this.cacheManager = core.CacheManager;
         if (core.bot != null || core.bot !== undefined) {
             this.Bot = core.bot!;
         } else {
@@ -35,6 +38,10 @@ export class Web {
         this.middlewares();
         this.registerRoutes();
         this.errorHandler();
+
+        this.refreshDayCache();
+        setInterval(() => this.refreshDayCache(), 5 * 60 * 1000);
+
         if (this.config.devMode) {
             console.log('[Web] Dev Mode: ON');
             this.runServer(this.config.devPort);
@@ -132,12 +139,18 @@ export class Web {
 
     private async getDay(req: Request, res: Response) {
         const startTime = new Date().setHours(0, 0, 0, 0) / 1000;
-        const endTime = startTime + 86400;
-        const dayTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
+        const dayTimeCache: [] = JSON.parse(await this.cacheManager.get(`${req.params.serverID}-Day`));
 
-        this.processData(dayTime, req.params.serverID, startTime).then(data => {
-            res.json({ msg: 'OK', data });
-        });
+        if (dayTimeCache !== null) {
+            res.json({ msg: 'OK', data: dayTimeCache });
+        } else {
+            const endTime = startTime + 86400;
+            const dayTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
+
+            this.processData(dayTime, req.params.serverID, startTime).then(data => {
+                res.json({ msg: 'OK', data });
+            });
+        }
     }
 
     private async getWeek(req: Request, res: Response) {
@@ -388,5 +401,24 @@ export class Web {
             groups,
             dataSets
         };
+    }
+
+    private async refreshDayCache() {
+        const serverID = await this.timeManager.getDataByKeyword('serverID');
+        const startTime = new Date().setHours(0, 0, 0, 0) / 1000;
+        const endTime = startTime + 86400;
+        const cacheTTL = 5 * 60;
+
+        serverID.forEach(async id => {
+            const time = await this.timeManager.get(id, startTime, endTime);
+
+            if (time.length !== 0) {
+                await this.processData(time, id, startTime).then(async data => {
+                    const value = JSON.stringify(data);
+                    this.cacheManager.set(`${id}-Day`, value, cacheTTL);
+                });
+            }
+        });
+        return this.refreshDayCache;
     }
 }
