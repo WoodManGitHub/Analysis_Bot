@@ -40,7 +40,7 @@ export class Web {
         this.errorHandler();
 
         this.refreshDayCache();
-        setInterval(() => this.refreshDayCache(), 5 * 60 * 1000);
+        setInterval(() => this.refreshDayCache(), this.config.cacheDayTTL * 60 * 1000);
 
         if (this.config.devMode) {
             console.log('[Web] Dev Mode: ON');
@@ -407,7 +407,7 @@ export class Web {
         const serverID = await this.timeManager.getDataByKeyword('serverID');
         const startTime = new Date().setHours(0, 0, 0, 0) / 1000;
         const endTime = startTime + 86400;
-        const cacheTTL = 5 * 60;
+        const cacheTTL = this.config.cacheDayTTL * 60;
 
         serverID.forEach(async id => {
             const time = await this.timeManager.get(id, startTime, endTime);

@@ -29,6 +29,7 @@ class Web {
         this.middlewares();
         this.registerRoutes();
         this.errorHandler();
+        this.cacheCorn();
         this.refreshDayCache();
         setInterval(() => this.refreshDayCache(), 5 * 60 * 1000);
         if (this.config.devMode) {
@@ -380,6 +381,8 @@ class Web {
             }
         });
         return this.refreshDayCache;
+    }
+    async cacheCorn() {
     }
 }
 exports.Web = Web;

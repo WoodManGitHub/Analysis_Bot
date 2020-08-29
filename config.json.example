@@ -21,6 +21,8 @@
         "origin": "*",
         "recaptcha": {
             "secretKey": ""
-        }
+        },
+        "cacheDayTTL": 5,
+        "cacheWeekTTL": 7
     }
 }
