@@ -3,15 +3,19 @@ import { EventEmitter } from 'events';
 import { resolve } from 'path';
 import { Bot } from './Component/Bot';
 import { Web } from './Component/Web';
+import { CacheManager } from './Core/CacheManager';
 import { MongoDB } from './Core/MongoDB';
 import { RankManager } from './Core/RankManager';
+import { Redis } from './Core/Redis';
 import { TimeManager } from './Core/TimeManager';
 
 export class Core extends EventEmitter {
     public readonly config = require(resolve('config.json'));
     public readonly database = new MongoDB(this.config);
+    public readonly cache = new Redis(this.config);
     public readonly TimeManager = new TimeManager(this);
     public readonly RankManager = new RankManager(this);
+    public readonly CacheManager = new CacheManager(this);
     public bot: CommandClient | null | undefined;
 
     constructor() {
@@ -19,8 +23,10 @@ export class Core extends EventEmitter {
 
         this.emit('init', this);
 
-        // Wait DB connect
-        this.database.on('connect', () => this.emit('ready'));
+        // Wait DB and Cache connect
+        this.checkAll([this.database, this.cache]).then(() => {
+            this.emit('ready');
+        });
 
         this.on('ready', async () => {
             try {
@@ -39,6 +45,24 @@ export class Core extends EventEmitter {
                 console.error(error);
             }
         });
+    }
+
+    private waitEvent(event: EventEmitter) {
+        // tslint:disable-next-line: no-shadowed-variable
+        return new Promise((resolve, rejects) => {
+            event.on('connect', resolve);
+            event.on('error', rejects);
+        });
+    }
+
+    private async checkAll(process: any[]) {
+        const pending: any[] = [];
+
+        process.forEach((element: any) => {
+            pending.push(this.waitEvent(element));
+        });
+
+        await Promise.all(pending);
     }
 }
 
