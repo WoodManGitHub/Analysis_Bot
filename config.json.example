@@ -22,7 +22,6 @@
         "recaptcha": {
             "secretKey": ""
         },
-        "cacheDayTTL": 5,
-        "cacheWeekTTL": 7
+        "cacheDayTTL": 10
     }
 }
