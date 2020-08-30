@@ -5,6 +5,7 @@ import express from 'express';
 import helmet from 'helmet';
 import moment from 'moment';
 import fetch from 'node-fetch';
+import schedule from 'node-schedule';
 import SunCalc from 'suncalc';
 import { parse, URLSearchParams } from 'url';
 import { Core } from '..';
@@ -38,6 +39,7 @@ export class Web {
         this.middlewares();
         this.registerRoutes();
         this.errorHandler();
+        this.cacheCorn();
 
         this.refreshDayCache();
         setInterval(() => this.refreshDayCache(), this.config.cacheDayTTL * 60 * 1000);
@@ -138,12 +140,12 @@ export class Web {
     }
 
     private async getDay(req: Request, res: Response) {
-        const startTime = new Date().setHours(0, 0, 0, 0) / 1000;
         const dayTimeCache: [] = JSON.parse(await this.cacheManager.get(`${req.params.serverID}-Day`));
 
         if (dayTimeCache !== null) {
             res.json({ msg: 'OK', data: dayTimeCache });
         } else {
+            const startTime = new Date().setHours(0, 0, 0, 0) / 1000;
             const endTime = startTime + 86400;
             const dayTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
 
@@ -154,17 +156,23 @@ export class Web {
     }
 
     private async getWeek(req: Request, res: Response) {
-        const oneDayTime = 24 * 60 * 60;
-        const time = new Date();
-        const midnight = time.setHours(0, 0, 0, 0) / 1000;
-        const day = time.getDay();
-        const startTime = (midnight - (day - 1) * oneDayTime);
-        const endTime = (midnight + (7 - day) * oneDayTime);
-        const weekTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
+        const weekTimeCache: [] = JSON.parse(await this.cacheManager.get(`${req.params.serverID}-Week`));
 
-        this.processData(weekTime, req.params.serverID, startTime).then(data => {
-            res.json({ msg: 'OK', data });
-        });
+        if (weekTimeCache !== null) {
+            res.json({ msg: 'OK', data: weekTimeCache});
+        } else {
+            const oneDayTime = 24 * 60 * 60;
+            const time = new Date();
+            const midnight = time.setHours(0, 0, 0, 0) / 1000;
+            const day = time.getDay() === 0 ? 7 : time.getDay();
+            const startTime = (midnight - (day - 1) * oneDayTime);
+            const endTime = Math.floor(time.getTime() / 1000);
+            const weekTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
+
+            this.processData(weekTime, req.params.serverID, startTime).then(data => {
+                res.json({ msg: 'OK', data });
+            });
+        }
     }
 
     private async getAll(req: Request, res: Response) {
@@ -410,15 +418,39 @@ export class Web {
         const cacheTTL = this.config.cacheDayTTL * 60;
 
         serverID.forEach(async id => {
-            const time = await this.timeManager.get(id, startTime, endTime);
+            const cacheDay = await this.timeManager.get(id, startTime, endTime);
 
-            if (time.length !== 0) {
-                await this.processData(time, id, startTime).then(async data => {
+            if (cacheDay.length !== 0) {
+                await this.processData(cacheDay, id, startTime).then(async data => {
                     const value = JSON.stringify(data);
                     this.cacheManager.set(`${id}-Day`, value, cacheTTL);
                 });
             }
         });
         return this.refreshDayCache;
+    }
+
+    private async cacheCorn() {
+        schedule.scheduleJob('0 0 * * *', async () => {
+            const serverID = await this.timeManager.getDataByKeyword('serverID');
+            const oneDayTime = 24 * 60 * 60;
+            const time = new Date();
+            const midnight = time.setHours(0, 0, 0, 0) / 1000;
+            const day = time.getDay() === 0 ? 7 : time.getDay();
+            const startTime = (midnight - (day - 1) * oneDayTime);
+            const endTime = Math.floor(time.getTime() / 1000);
+            const cacheTTL = (8 - day) * 86400;
+
+            serverID.forEach(async id => {
+                const cacheWeek = await this.timeManager.get(id, startTime, endTime);
+
+                if (cacheWeek.length !== 0) {
+                    await this.processData(cacheWeek, id, startTime).then(async data => {
+                        const value = JSON.stringify(data);
+                        this.cacheManager.set(`${id}-Week`, value, cacheTTL);
+                    });
+                }
+            });
+        });
     }
 }
