@@ -32,15 +32,23 @@ Web on `localhost` and port is `8787`.
 - `/api/day/:serverID` 
   - Get server today data (From 0:00 to the next day at 0:00)
 - `/api/week/:serverID`
-  - Get server week data (From Monday to Sunday)
+  - Get server week data (From Monday to Today)
 - ~~`/api/all/:serverID`~~
-  - ~~Get server all data~~ (Remove)
+  - ~~Get server all data~~ (Ready to remove)
 - `/api/custom/:serverID?start=<unixTime>&end=<unixTime>`
   - Get server custom time data
 
+# Cache
+Cache system use Redis.
+
+- Day
+  - The default is to refresh the Cache every 10 minutes
+- Week
+  - Generate caches from Monday to Today everyday at 12:00 am
+
 # Todo
 - [ ] Change all to time search
-- [ ] Speed up loading
+- [x] ~~Speed up loading (Cache)~~
 - [x] ~~Change monthly to weekly~~
 - [x] ~~Web pages~~
 - [ ] ~~Predicting user status (Abandon)~~
