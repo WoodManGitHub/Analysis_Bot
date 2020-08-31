@@ -16,6 +16,7 @@ const ERR_BAD_REQUEST = '400 Bad request!';
 const ERR_FORBIDDEN = '400 Forbidden!';
 const ERR_NOT_FOUND = '404 Not found!';
 const ERR_SERVER_ERROR = '500 Internal Server Error';
+const ONE_DAY_SECONDS = 86400;
 
 export class Web {
     private config: any;
@@ -146,7 +147,7 @@ export class Web {
             res.json({ msg: 'OK', data: dayTimeCache });
         } else {
             const startTime = new Date().setHours(0, 0, 0, 0) / 1000;
-            const endTime = startTime + 86400;
+            const endTime = startTime + ONE_DAY_SECONDS;
             const dayTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
 
             this.processData(dayTime, req.params.serverID, startTime).then(data => {
@@ -161,12 +162,11 @@ export class Web {
         if (weekTimeCache !== null) {
             res.json({ msg: 'OK', data: weekTimeCache});
         } else {
-            const oneDayTime = 24 * 60 * 60;
             const time = new Date();
             const midnight = time.setHours(0, 0, 0, 0) / 1000;
             const day = time.getDay() === 0 ? 7 : time.getDay();
-            const startTime = (midnight - (day - 1) * oneDayTime);
-            const endTime = Math.floor(time.getTime() / 1000);
+            const startTime = (midnight - (day - 1) * ONE_DAY_SECONDS);
+            const endTime = Math.floor(time.getTime() / 1000) + ONE_DAY_SECONDS;
             const weekTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
 
             this.processData(weekTime, req.params.serverID, startTime).then(data => {
@@ -393,7 +393,7 @@ export class Web {
         let time = (startTime !== undefined) ? startTime : raw[0].timeStamp;
         const endTime = Math.round(Date.now() / 1000);
 
-        for (; time < endTime; time += 86400) {
+        for (; time < endTime; time += ONE_DAY_SECONDS) {
             const date = new Date(time * 1000);
             const sunLight = SunCalc.getTimes(date, 25.034276, 121.561696);
             const sunRise = moment(sunLight.sunrise).format('YYYY-MM-DD HH:mm:ss');
@@ -414,7 +414,7 @@ export class Web {
     private async refreshDayCache() {
         const serverID = await this.timeManager.getDataByKeyword('serverID');
         const startTime = new Date().setHours(0, 0, 0, 0) / 1000;
-        const endTime = startTime + 86400;
+        const endTime = startTime + ONE_DAY_SECONDS;
         const cacheTTL = this.config.cacheDayTTL * 60;
 
         serverID.forEach(async id => {
@@ -433,13 +433,13 @@ export class Web {
     private async cacheCorn() {
         schedule.scheduleJob('0 0 * * *', async () => {
             const serverID = await this.timeManager.getDataByKeyword('serverID');
-            const oneDayTime = 24 * 60 * 60;
+
             const time = new Date();
             const midnight = time.setHours(0, 0, 0, 0) / 1000;
             const day = time.getDay() === 0 ? 7 : time.getDay();
-            const startTime = (midnight - (day - 1) * oneDayTime);
-            const endTime = Math.floor(time.getTime() / 1000);
-            const cacheTTL = (8 - day) * 86400;
+            const startTime = (midnight - (day - 1) * ONE_DAY_SECONDS);
+            const endTime = Math.floor(time.getTime() / 1000) + ONE_DAY_SECONDS;
+            const cacheTTL = (8 - day) * ONE_DAY_SECONDS;
 
             serverID.forEach(async id => {
                 const cacheWeek = await this.timeManager.get(id, startTime, endTime);
