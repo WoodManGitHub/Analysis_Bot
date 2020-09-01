@@ -3,6 +3,7 @@ import { CommandClient } from 'eris';
 import { Application, NextFunction, Request, Response } from 'express';
 import express from 'express';
 import helmet from 'helmet';
+import { getStatusCode, ReasonPhrases, StatusCodes } from 'http-status-codes';
 import moment from 'moment';
 import fetch from 'node-fetch';
 import schedule from 'node-schedule';
@@ -12,10 +13,6 @@ import { Core } from '..';
 import { CacheManager } from '../Core/CacheManager';
 import { ITime, TimeManager } from '../Core/TimeManager';
 
-const ERR_BAD_REQUEST = '400 Bad request!';
-const ERR_FORBIDDEN = '400 Forbidden!';
-const ERR_NOT_FOUND = '404 Not found!';
-const ERR_SERVER_ERROR = '500 Internal Server Error';
 const ONE_DAY_SECONDS = 86400;
 
 export class Web {
@@ -70,30 +67,17 @@ export class Web {
         const reqURL = parse(req.url).query as string;
         const reg = /\[\w+\]/;
         if (reg.test(reqURL)) {
-            next(new Error('HTTP400'));
+            next(new Error(ReasonPhrases.BAD_REQUEST));
         }
         next();
     }
 
     private async errorHandler() {
         this.server.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-            if (err.message.startsWith('HTTP400')) {
-                res.status(400).json({
-                    error: ERR_BAD_REQUEST
+            if (err.message) {
+                res.status(getStatusCode(err.message)).json({
+                    error: err.message
                 });
-            } else if (err.message.startsWith('HTTP403')) {
-                res.status(403).json({
-                    error: ERR_FORBIDDEN
-                });
-            } else if (err.message.startsWith('HTTP404')) {
-                res.status(404).json({
-                    error: ERR_NOT_FOUND
-                });
-            } else {
-                res.status(500).json({
-                    error: ERR_SERVER_ERROR
-                });
-                next(err);
             }
         });
     }
@@ -118,12 +102,12 @@ export class Web {
     }
 
     private async errorURL(req: Request, res: Response) {
-        throw new Error('HTTP404');
+        throw new Error(ReasonPhrases.NOT_FOUND);
     }
 
     private async reCaptcha(req: Request, res: Response) {
         if (!req.params.token) {
-            res.status(400).json({ msg: 'Invalid token' });
+            res.status(StatusCodes.UNAUTHORIZED).json({ error: 'Invalid token' });
         } else {
             const options = new URLSearchParams({
                 secret: this.config.recaptcha.secretKey,
@@ -135,7 +119,7 @@ export class Web {
             })
             .then(response => response.json())
             .then(data => {
-                res.json({ msg: 'OK', data});
+                res.status(StatusCodes.OK).json({ data });
             });
         }
     }
@@ -144,14 +128,14 @@ export class Web {
         const dayTimeCache: [] = JSON.parse(await this.cacheManager.get(`${req.params.serverID}-Day`));
 
         if (dayTimeCache !== null) {
-            res.json({ msg: 'OK', data: dayTimeCache });
+            res.status(StatusCodes.OK).json({ data: dayTimeCache });
         } else {
             const startTime = new Date().setHours(0, 0, 0, 0) / 1000;
             const endTime = startTime + ONE_DAY_SECONDS;
             const dayTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
 
             this.processData(dayTime, req.params.serverID, startTime).then(data => {
-                res.json({ msg: 'OK', data });
+                res.status(StatusCodes.OK).json({ data });
             });
         }
     }
@@ -160,7 +144,7 @@ export class Web {
         const weekTimeCache: [] = JSON.parse(await this.cacheManager.get(`${req.params.serverID}-Week`));
 
         if (weekTimeCache !== null) {
-            res.json({ msg: 'OK', data: weekTimeCache});
+            res.status(StatusCodes.OK).json({ data: weekTimeCache});
         } else {
             const time = new Date();
             const midnight = time.setHours(0, 0, 0, 0) / 1000;
@@ -170,7 +154,7 @@ export class Web {
             const weekTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
 
             this.processData(weekTime, req.params.serverID, startTime).then(data => {
-                res.json({ msg: 'OK', data });
+                res.status(StatusCodes.OK).json({ data });
             });
         }
     }
@@ -189,11 +173,12 @@ export class Web {
 
         if (!isNaN(startTime) && !isNaN(endTime) && startTime < endTime) {
             const customTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
+
             this.processData(customTime, req.params.serverID, startTime).then(data => {
-                res.json({ msg: 'OK', data });
+                res.status(StatusCodes.OK).json({ data });
             });
         } else {
-            throw new Error('HTTP400');
+            throw new Error(ReasonPhrases.BAD_REQUEST);
         }
     }
 

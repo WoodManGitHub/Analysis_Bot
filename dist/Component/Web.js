@@ -6,15 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const cors_1 = __importDefault(require("cors"));
 const express_1 = __importDefault(require("express"));
 const helmet_1 = __importDefault(require("helmet"));
+const http_status_codes_1 = require("http-status-codes");
 const moment_1 = __importDefault(require("moment"));
 const node_fetch_1 = __importDefault(require("node-fetch"));
 const node_schedule_1 = __importDefault(require("node-schedule"));
 const suncalc_1 = __importDefault(require("suncalc"));
 const url_1 = require("url");
-const ERR_BAD_REQUEST = '400 Bad request!';
-const ERR_FORBIDDEN = '400 Forbidden!';
-const ERR_NOT_FOUND = '404 Not found!';
-const ERR_SERVER_ERROR = '500 Internal Server Error';
 const ONE_DAY_SECONDS = 86400;
 class Web {
     constructor(core) {
@@ -57,32 +54,16 @@ class Web {
         const reqURL = url_1.parse(req.url).query;
         const reg = /\[\w+\]/;
         if (reg.test(reqURL)) {
-            next(new Error('HTTP400'));
+            next(new Error(http_status_codes_1.ReasonPhrases.BAD_REQUEST));
         }
         next();
     }
     async errorHandler() {
         this.server.use((err, req, res, next) => {
-            if (err.message.startsWith('HTTP400')) {
-                res.status(400).json({
-                    error: ERR_BAD_REQUEST
+            if (err.message) {
+                res.status(http_status_codes_1.getStatusCode(err.message)).json({
+                    error: err.message
                 });
-            }
-            else if (err.message.startsWith('HTTP403')) {
-                res.status(403).json({
-                    error: ERR_FORBIDDEN
-                });
-            }
-            else if (err.message.startsWith('HTTP404')) {
-                res.status(404).json({
-                    error: ERR_NOT_FOUND
-                });
-            }
-            else {
-                res.status(500).json({
-                    error: ERR_SERVER_ERROR
-                });
-                next(err);
             }
         });
     }
@@ -104,11 +85,11 @@ class Web {
         this.server.get('*', this.route(this.errorURL));
     }
     async errorURL(req, res) {
-        throw new Error('HTTP404');
+        throw new Error(http_status_codes_1.ReasonPhrases.NOT_FOUND);
     }
     async reCaptcha(req, res) {
         if (!req.params.token) {
-            res.status(400).json({ msg: 'Invalid token' });
+            res.status(http_status_codes_1.StatusCodes.UNAUTHORIZED).json({ error: 'Invalid token' });
         }
         else {
             const options = new url_1.URLSearchParams({
@@ -121,28 +102,28 @@ class Web {
             })
                 .then(response => response.json())
                 .then(data => {
-                res.json({ msg: 'OK', data });
+                res.status(http_status_codes_1.StatusCodes.OK).json({ data });
             });
         }
     }
     async getDay(req, res) {
         const dayTimeCache = JSON.parse(await this.cacheManager.get(`${req.params.serverID}-Day`));
         if (dayTimeCache !== null) {
-            res.json({ msg: 'OK', data: dayTimeCache });
+            res.status(http_status_codes_1.StatusCodes.OK).json({ data: dayTimeCache });
         }
         else {
             const startTime = new Date().setHours(0, 0, 0, 0) / 1000;
             const endTime = startTime + ONE_DAY_SECONDS;
             const dayTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
             this.processData(dayTime, req.params.serverID, startTime).then(data => {
-                res.json({ msg: 'OK', data });
+                res.status(http_status_codes_1.StatusCodes.OK).json({ data });
             });
         }
     }
     async getWeek(req, res) {
         const weekTimeCache = JSON.parse(await this.cacheManager.get(`${req.params.serverID}-Week`));
         if (weekTimeCache !== null) {
-            res.json({ msg: 'OK', data: weekTimeCache });
+            res.status(http_status_codes_1.StatusCodes.OK).json({ data: weekTimeCache });
         }
         else {
             const time = new Date();
@@ -152,7 +133,7 @@ class Web {
             const endTime = Math.floor(time.getTime() / 1000) + ONE_DAY_SECONDS;
             const weekTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
             this.processData(weekTime, req.params.serverID, startTime).then(data => {
-                res.json({ msg: 'OK', data });
+                res.status(http_status_codes_1.StatusCodes.OK).json({ data });
             });
         }
     }
@@ -168,11 +149,11 @@ class Web {
         if (!isNaN(startTime) && !isNaN(endTime) && startTime < endTime) {
             const customTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
             this.processData(customTime, req.params.serverID, startTime).then(data => {
-                res.json({ msg: 'OK', data });
+                res.status(http_status_codes_1.StatusCodes.OK).json({ data });
             });
         }
         else {
-            throw new Error('HTTP400');
+            throw new Error(http_status_codes_1.ReasonPhrases.BAD_REQUEST);
         }
     }
     async processData(raw, serverID, startTime) {
