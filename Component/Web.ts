@@ -187,13 +187,13 @@ export class Web {
         const startTime: number = parseInt(req.query.start as string, 10);
         const endTime: number = parseInt(req.query.end as string, 10);
 
-        if (startTime && endTime && startTime < endTime) {
+        if (!isNaN(startTime) && !isNaN(endTime) && startTime < endTime) {
             const customTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
             this.processData(customTime, req.params.serverID, startTime).then(data => {
                 res.json({ msg: 'OK', data });
             });
         } else {
-            res.json({ msg: 'No Data' });
+            throw new Error('HTTP400');
         }
     }
 
