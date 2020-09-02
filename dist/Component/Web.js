@@ -115,7 +115,7 @@ class Web {
             const startTime = new Date().setHours(0, 0, 0, 0) / 1000;
             const endTime = startTime + ONE_DAY_SECONDS;
             const dayTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
-            this.processData(dayTime, req.params.serverID, startTime).then(data => {
+            this.processData(dayTime, req.params.serverID, startTime, undefined).then(data => {
                 res.status(http_status_codes_1.StatusCodes.OK).json({ data });
             });
         }
@@ -132,14 +132,14 @@ class Web {
             const startTime = (midnight - (day - 1) * ONE_DAY_SECONDS);
             const endTime = Math.floor(time.getTime() / 1000) + ONE_DAY_SECONDS;
             const weekTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
-            this.processData(weekTime, req.params.serverID, startTime).then(data => {
+            this.processData(weekTime, req.params.serverID, startTime, endTime).then(data => {
                 res.status(http_status_codes_1.StatusCodes.OK).json({ data });
             });
         }
     }
     async getAll(req, res) {
         const allTime = await this.timeManager.getAll(req.params.serverID);
-        this.processData(allTime, req.params.serverID, undefined).then(data => {
+        this.processData(allTime, req.params.serverID, undefined, undefined).then(data => {
             res.json({ msg: 'OK', data });
         });
     }
@@ -148,7 +148,7 @@ class Web {
         const endTime = parseInt(req.query.end, 10);
         if (!isNaN(startTime) && !isNaN(endTime) && startTime < endTime) {
             const customTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
-            this.processData(customTime, req.params.serverID, startTime).then(data => {
+            this.processData(customTime, req.params.serverID, startTime, endTime).then(data => {
                 res.status(http_status_codes_1.StatusCodes.OK).json({ data });
             });
         }
@@ -156,7 +156,7 @@ class Web {
             throw new Error(http_status_codes_1.ReasonPhrases.BAD_REQUEST);
         }
     }
-    async processData(raw, serverID, startTime) {
+    async processData(raw, serverID, startTime, endTime) {
         if (raw.length === 0)
             return '';
         const dataRaw = {};
@@ -337,8 +337,8 @@ class Web {
             });
         }
         let time = (startTime !== undefined) ? startTime : raw[0].timeStamp;
-        const endTime = Math.round(Date.now() / 1000);
-        for (; time < endTime; time += ONE_DAY_SECONDS) {
+        const end = Math.round(Date.now() / 1000);
+        for (; time < end; time += ONE_DAY_SECONDS) {
             const date = new Date(time * 1000);
             const sunLight = suncalc_1.default.getTimes(date, 25.034276, 121.561696);
             const sunRise = moment_1.default(sunLight.sunrise).format('YYYY-MM-DD HH:mm:ss');
@@ -348,7 +348,7 @@ class Web {
         return {
             properties: {
                 startTime: moment_1.default.unix((startTime !== undefined) ? startTime : raw[0].timeStamp).format('YYYY-MM-DD HH:mm:ss'),
-                endTime: moment_1.default().format('YYYY-MM-DD HH:mm:ss')
+                endTime: moment_1.default.unix((endTime !== undefined) ? endTime : end).format('YYYY-MM-DD HH:mm:ss')
             },
             groups,
             dataSets
@@ -362,7 +362,7 @@ class Web {
         serverID.forEach(async (id) => {
             const cacheDay = await this.timeManager.get(id, startTime, endTime);
             if (cacheDay.length !== 0) {
-                await this.processData(cacheDay, id, startTime).then(async (data) => {
+                await this.processData(cacheDay, id, startTime, undefined).then(async (data) => {
                     const value = JSON.stringify(data);
                     this.cacheManager.set(`${id}-Day`, value, cacheTTL);
                 });
@@ -382,7 +382,7 @@ class Web {
             serverID.forEach(async (id) => {
                 const cacheWeek = await this.timeManager.get(id, startTime, endTime);
                 if (cacheWeek.length !== 0) {
-                    await this.processData(cacheWeek, id, startTime).then(async (data) => {
+                    await this.processData(cacheWeek, id, startTime, endTime).then(async (data) => {
                         const value = JSON.stringify(data);
                         this.cacheManager.set(`${id}-Week`, value, cacheTTL);
                     });
