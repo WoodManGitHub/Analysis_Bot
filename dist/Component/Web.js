@@ -113,7 +113,7 @@ class Web {
         }
         else {
             const startTime = new Date().setHours(0, 0, 0, 0) / 1000;
-            const endTime = startTime + ONE_DAY_SECONDS;
+            const endTime = this.getNowTime();
             const dayTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
             this.processData(dayTime, req.params.serverID, startTime, undefined).then(data => {
                 res.status(http_status_codes_1.StatusCodes.OK).json({ data });
@@ -145,7 +145,10 @@ class Web {
     }
     async getCustomTime(req, res) {
         const startTime = parseInt(req.query.start, 10);
-        const endTime = parseInt(req.query.end, 10);
+        let endTime = parseInt(req.query.end, 10) + ONE_DAY_SECONDS;
+        const now = this.getNowTime();
+        if (endTime > now)
+            endTime = now;
         if (!isNaN(startTime) && !isNaN(endTime) && startTime < endTime) {
             const customTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
             this.processData(customTime, req.params.serverID, startTime, endTime).then(data => {
@@ -305,7 +308,7 @@ class Web {
                         lastActivity = activity;
                 }
                 if (lastActivity !== undefined) {
-                    const now = moment_1.default().format('YYYY-MM-DD HH:mm:ss');
+                    const now = ((endTime !== undefined) ? moment_1.default.unix(endTime) : moment_1.default()).format('YYYY-MM-DD HH:mm:ss');
                     switch (lastActivity.type) {
                         case 'join': {
                             dataSets.push({ content: '', start: lastActivity.time, end: now, group: userName, className: 'online', title: `Online<br>${lastActivity.time} - ${now}` });
@@ -357,7 +360,7 @@ class Web {
     async refreshDayCache() {
         const serverID = await this.timeManager.getDataByKeyword('serverID');
         const startTime = new Date().setHours(0, 0, 0, 0) / 1000;
-        const endTime = startTime + ONE_DAY_SECONDS;
+        const endTime = this.getNowTime();
         const cacheTTL = this.config.cacheDayTTL * 60;
         serverID.forEach(async (id) => {
             const cacheDay = await this.timeManager.get(id, startTime, endTime);
@@ -389,6 +392,9 @@ class Web {
                 }
             });
         });
+    }
+    getNowTime() {
+        return Math.floor(Date.now() / 1000);
     }
 }
 exports.Web = Web;

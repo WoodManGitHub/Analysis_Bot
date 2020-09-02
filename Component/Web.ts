@@ -131,7 +131,7 @@ export class Web {
             res.status(StatusCodes.OK).json({ data: dayTimeCache });
         } else {
             const startTime = new Date().setHours(0, 0, 0, 0) / 1000;
-            const endTime = startTime + ONE_DAY_SECONDS;
+            const endTime = this.getNowTime();
             const dayTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
 
             this.processData(dayTime, req.params.serverID, startTime, undefined).then(data => {
@@ -169,7 +169,10 @@ export class Web {
 
     private async getCustomTime(req: Request, res: Response) {
         const startTime: number = parseInt(req.query.start as string, 10);
-        const endTime: number = parseInt(req.query.end as string, 10);
+        let endTime: number = parseInt(req.query.end as string, 10) + ONE_DAY_SECONDS;
+        const now = this.getNowTime();
+
+        if (endTime > now) endTime = now;
 
         if (!isNaN(startTime) && !isNaN(endTime) && startTime < endTime) {
             const customTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
@@ -339,7 +342,7 @@ export class Web {
 
                 // last record
                 if (lastActivity !== undefined) {
-                    const now = moment().format('YYYY-MM-DD HH:mm:ss');
+                    const now = ((endTime !== undefined) ? moment.unix(endTime) : moment()).format('YYYY-MM-DD HH:mm:ss');
 
                     // tempData.push([lastActivity.time, 'Unknown', now]);
                     switch (lastActivity.type) {
@@ -399,7 +402,7 @@ export class Web {
     private async refreshDayCache() {
         const serverID = await this.timeManager.getDataByKeyword('serverID');
         const startTime = new Date().setHours(0, 0, 0, 0) / 1000;
-        const endTime = startTime + ONE_DAY_SECONDS;
+        const endTime = this.getNowTime();
         const cacheTTL = this.config.cacheDayTTL * 60;
 
         serverID.forEach(async id => {
@@ -437,5 +440,9 @@ export class Web {
                 }
             });
         });
+    }
+
+    private getNowTime() {
+        return Math.floor(Date.now() / 1000);
     }
 }
