@@ -34,7 +34,7 @@ Web on `localhost` and port is `8787`.
 - `/api/week/:serverID`
   - Get server week data (From Monday to Today)
 - ~~`/api/all/:serverID`~~
-  - ~~Get server all data~~ (Ready to remove)
+  - ~~Get server all data~~ (remove)
 - `/api/custom/:serverID?start=<unixTime>&end=<unixTime>`
   - Get server custom time data
 
@@ -47,7 +47,7 @@ Cache system use Redis.
   - Generate caches from Monday to Today everyday at 12:00 am
 
 # Todo
-- [ ] Change all to time search
+- [X] Change all to time search
 - [x] ~~Speed up loading (Cache)~~
 - [x] ~~Change monthly to weekly~~
 - [x] ~~Web pages~~
