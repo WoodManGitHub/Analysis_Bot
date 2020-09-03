@@ -39,12 +39,6 @@ export class TimeManager {
         return this.database.find({ serverID, timeStamp: { $gte: startTime, $lt: endTime } }).sort({ timeStamp: 1 }).toArray();
     }
 
-    public async getAll(serverID: string) {
-        if (!this.database) throw ERR_DB_NOT_INIT;
-
-        return this.database.find({ serverID }).sort({ timeStamp: 1 }).toArray();
-    }
-
     public async getByUser(serverID: string, userID: string, startTime: number, endTime: number) {
         if (!this.database) throw ERR_DB_NOT_INIT;
 

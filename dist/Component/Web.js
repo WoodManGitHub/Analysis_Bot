@@ -79,7 +79,6 @@ class Web {
         this.server.get('/api', (req, res) => res.send('Analysis Bot Web Server'));
         this.server.get('/api/day/:serverID', this.route(this.getDay));
         this.server.get('/api/week/:serverID', this.route(this.getWeek));
-        this.server.get('/api/all/:serverID', this.route(this.getAll));
         this.server.get('/api/custom/:serverID', this.route(this.getCustomTime));
         this.server.get('/api/verify/:token', this.route(this.reCaptcha));
         this.server.get('*', this.route(this.errorURL));
@@ -136,12 +135,6 @@ class Web {
                 res.status(http_status_codes_1.StatusCodes.OK).json({ data });
             });
         }
-    }
-    async getAll(req, res) {
-        const allTime = await this.timeManager.getAll(req.params.serverID);
-        this.processData(allTime, req.params.serverID, undefined, undefined).then(data => {
-            res.json({ msg: 'OK', data });
-        });
     }
     async getCustomTime(req, res) {
         const startTime = parseInt(req.query.start, 10);

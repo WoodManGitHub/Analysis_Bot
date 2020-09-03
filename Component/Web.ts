@@ -95,7 +95,6 @@ export class Web {
         this.server.get('/api', (req: Request, res: Response) => res.send('Analysis Bot Web Server'));
         this.server.get('/api/day/:serverID', this.route(this.getDay));
         this.server.get('/api/week/:serverID', this.route(this.getWeek));
-        this.server.get('/api/all/:serverID', this.route(this.getAll));
         this.server.get('/api/custom/:serverID', this.route(this.getCustomTime));
         this.server.get('/api/verify/:token', this.route(this.reCaptcha));
         this.server.get('*', this.route(this.errorURL));
@@ -157,14 +156,6 @@ export class Web {
                 res.status(StatusCodes.OK).json({ data });
             });
         }
-    }
-
-    private async getAll(req: Request, res: Response) {
-        const allTime = await this.timeManager.getAll(req.params.serverID);
-
-        this.processData(allTime, req.params.serverID, undefined, undefined).then(data => {
-            res.json({ msg: 'OK', data });
-        });
     }
 
     private async getCustomTime(req: Request, res: Response) {
