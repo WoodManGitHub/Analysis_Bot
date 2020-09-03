@@ -40,7 +40,7 @@ class Web {
         }
     }
     runServer(port) {
-        this.server.listen(port, '0.0.0.0', () => {
+        this.server.listen(port, 'localhost', () => {
             console.log('[Web] Ready!');
         });
     }
