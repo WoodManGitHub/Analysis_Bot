@@ -47,7 +47,7 @@ Cache system use Redis.
   - Generate caches from Monday to Today everyday at 12:00 am
 
 # Todo
-- [X] Change all to time search
+- [X] ~~Change all to time search~~
 - [x] ~~Speed up loading (Cache)~~
 - [x] ~~Change monthly to weekly~~
 - [x] ~~Web pages~~
@@ -55,6 +55,7 @@ Cache system use Redis.
 - [x] ~~Web backend~~
 - [x] ~~Command~~
 - [x] ~~Rank~~
+- [ ] Change [Moment.js](https://momentjs.com/docs/#/-project-status/) (Maybe [Day.js](https://www.npmjs.com/package/dayjs))
 
 # Thanks
 [jimchen5209](https://jimchen5209.me) **Provide advice and assistance**
