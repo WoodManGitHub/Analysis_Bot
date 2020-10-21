@@ -4,7 +4,8 @@
         "prefix": "?",
         "admin": [
             "userID"
-        ]
+        ],
+        "rankDescription": "Rank description"
     },
     "database": {
         "host": "mongodb://localhost:27017",

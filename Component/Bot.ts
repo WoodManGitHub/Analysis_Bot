@@ -332,11 +332,11 @@ export class Bot {
     private async genErrorMessage(text: string, user: Member | undefined) {
         return {
             embed: (user === undefined) ? {
-                color: 13632027,
+                color: this.config.embed.errorColor,
                 description: text,
                 title: 'Error'
             } : {
-                    color: 13632027,
+                    color: this.config.embed.errorColor,
                     author: {
                         name: user.nick ? user.nick : user.username,
                         icon_url: user.avatarURL
@@ -356,7 +356,7 @@ export class Bot {
 
         return {
             embed: {
-                color: 4886754,
+                color: this.config.embed.color,
                 author: {
                     name: user.nick ? user.nick : user.username,
                     icon_url: user.avatarURL
@@ -377,8 +377,8 @@ export class Bot {
 
         return {
             embed: {
-                color: 4886754,
-                description: `肝帝排行 - (${moment().subtract(1, 'days').format('YYYY/MM/DD')})`,
+                color: this.config.embed.color,
+                description: `${this.config.embed.rank.description} - (${moment().subtract(1, 'days').format('YYYY/MM/DD')})`,
                 fields,
                 title: 'Rank'
             }
