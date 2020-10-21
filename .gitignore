@@ -93,5 +93,5 @@ config.json
 # Database transfer
 databaseTransfer/
 
-#Production
+# Production
 production/
