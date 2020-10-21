@@ -51,7 +51,7 @@ Cache system use Redis.
 - [x] ~~Speed up loading (Cache)~~
 - [x] ~~Change monthly to weekly~~
 - [x] ~~Web pages~~
-- [ ] ~~Predicting user status (Abandon)~~
+- [ ] ~~Predicting user status (Abort)~~
 - [x] ~~Web backend~~
 - [x] ~~Command~~
 - [x] ~~Rank~~
