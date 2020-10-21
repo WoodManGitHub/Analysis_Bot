@@ -74,7 +74,13 @@ class Bot {
     async commandGet(msg, args) {
         const type = args[0];
         const userID = args[1];
-        const user = (await this.bot.getRESTGuildMember(msg.member.guild.id, userID));
+        let user;
+        try {
+            user = (await this.bot.getRESTGuildMember(msg.member.guild.id, userID));
+        }
+        catch (e) {
+            msg.channel.createMessage(await this.genErrorMessage('User not found', user));
+        }
         let startTime;
         let endTime;
         const oneDayTime = 24 * 60 * 60;
@@ -100,37 +106,39 @@ class Bot {
         }
         const Time = await this.timeManager.getByUser(msg.member.guild.id, userID, startTime, endTime);
         this.genTimeData(Time, msg.member.guild.id, startTime, undefined).then(async (result) => {
-            if (result[userID] !== undefined) {
-                msg.channel.createMessage(await this.genStatusMessage(user, result[userID].online, result[userID].offline, result[userID].afk));
-            }
-            else {
-                const lastData = await this.timeManager.getLastDataByUser(msg.member.guild.id, userID, startTime);
-                if (lastData.length !== 0) {
-                    let onlineTotal = 0;
-                    let offlineTotal = 0;
-                    let afkTotal = 0;
-                    switch (lastData[0].type) {
-                        case 'join': {
-                            onlineTotal += Math.round(Date.now() / 1000) - startTime;
-                            break;
-                        }
-                        case 'leave': {
-                            offlineTotal += Math.round(Date.now() / 1000) - startTime;
-                            break;
-                        }
-                        case 'afk': {
-                            afkTotal += Math.round(Date.now() / 1000) - startTime;
-                            break;
-                        }
-                        case 'back': {
-                            onlineTotal += Math.round(Date.now() / 1000) - startTime;
-                            break;
-                        }
-                    }
-                    msg.channel.createMessage(await this.genStatusMessage(user, onlineTotal, offlineTotal, afkTotal));
+            if (user) {
+                if (result[userID] !== undefined) {
+                    msg.channel.createMessage(await this.genStatusMessage(user, result[userID].online, result[userID].offline, result[userID].afk));
                 }
                 else {
-                    msg.channel.createMessage(await this.genErrorMessage('No Data', user));
+                    const lastData = await this.timeManager.getLastDataByUser(msg.member.guild.id, userID, startTime);
+                    if (lastData.length !== 0) {
+                        let onlineTotal = 0;
+                        let offlineTotal = 0;
+                        let afkTotal = 0;
+                        switch (lastData[0].type) {
+                            case 'join': {
+                                onlineTotal += Math.round(Date.now() / 1000) - startTime;
+                                break;
+                            }
+                            case 'leave': {
+                                offlineTotal += Math.round(Date.now() / 1000) - startTime;
+                                break;
+                            }
+                            case 'afk': {
+                                afkTotal += Math.round(Date.now() / 1000) - startTime;
+                                break;
+                            }
+                            case 'back': {
+                                onlineTotal += Math.round(Date.now() / 1000) - startTime;
+                                break;
+                            }
+                        }
+                        msg.channel.createMessage(await this.genStatusMessage(user, onlineTotal, offlineTotal, afkTotal));
+                    }
+                    else {
+                        msg.channel.createMessage(await this.genErrorMessage('No Data', user));
+                    }
                 }
             }
         });
