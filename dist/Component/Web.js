@@ -129,7 +129,7 @@ class Web {
             const midnight = time.setHours(0, 0, 0, 0) / 1000;
             const day = time.getDay() === 0 ? 7 : time.getDay();
             const startTime = (midnight - (day - 1) * ONE_DAY_SECONDS);
-            const endTime = Math.floor(time.getTime() / 1000) + ONE_DAY_SECONDS;
+            const endTime = this.getNowTime();
             const weekTime = await this.timeManager.get(req.params.serverID, startTime, endTime);
             this.processData(weekTime, req.params.serverID, startTime, endTime).then(data => {
                 res.status(http_status_codes_1.StatusCodes.OK).json({ data });
