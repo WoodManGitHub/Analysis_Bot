@@ -373,7 +373,7 @@ class Web {
             const midnight = time.setHours(0, 0, 0, 0) / 1000;
             const day = time.getDay() === 0 ? 7 : time.getDay();
             const startTime = (midnight - (day - 1) * ONE_DAY_SECONDS);
-            const endTime = Math.floor(time.getTime() / 1000) + ONE_DAY_SECONDS;
+            const endTime = this.getNowTime();
             const cacheTTL = (8 - day) * ONE_DAY_SECONDS;
             serverID.forEach(async (id) => {
                 const cacheWeek = await this.timeManager.get(id, startTime, endTime);
