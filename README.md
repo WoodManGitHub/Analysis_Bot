@@ -2,6 +2,8 @@
 You can check out introduction to this repo on my blog: [here](https://blog.woodman.tw/2020/03/11/%E5%B0%88%E6%A1%88%E4%BB%8B%E7%B4%B9-Discord-Analysis-Bot/)  
 Analyze users online, offline, AFK in voice channels.
 
+**The front-end repo is [here](https://github.com/WoodManGitHub/Analysis_Bot_Web)**
+
 # How to use
 ```
 1. Edit config.json.example and rename it config.json
