@@ -40,8 +40,8 @@ class Web {
         }
     }
     runServer(port) {
-        this.server.listen(port, 'localhost' || process.env.HOST, () => {
-            console.log('[Web] Ready!');
+        this.server.listen(port, process.env.HOST || 'localhost', () => {
+            console.log(`[Web] Ready! Port: ${process.env.HOST || 'localhost'}`);
         });
     }
     async middlewares() {
