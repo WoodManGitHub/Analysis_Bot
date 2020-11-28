@@ -42,7 +42,7 @@ class Web {
     runServer(port) {
         const host = process.env.HOST || 'localhost';
         this.server.listen(port, host, () => {
-            console.log(`[Web] Ready! Port: ${host}`);
+            console.log(`[Web] Ready! Host: ${host}:${port}`);
         });
     }
     async middlewares() {
