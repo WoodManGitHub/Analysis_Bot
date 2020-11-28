@@ -51,7 +51,7 @@ export class Web {
     }
 
     private runServer(port: number) {
-        this.server.listen(port, 'localhost', () => {
+        this.server.listen(port, 'localhost' || process.env.HOST, () => {
             console.log('[Web] Ready!');
         });
     }
