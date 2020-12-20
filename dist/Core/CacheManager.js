@@ -10,10 +10,15 @@ class CacheManager {
             this.client = core.cache.client;
         });
     }
-    async set(key, value, ttl) {
+    async setByTTL(key, value, ttl) {
         if (!this.client)
             throw Redis_1.ERR_DB_NOT_INIT;
         await this.client.set([key, value, 'EX', ttl]);
+    }
+    async set(key, value) {
+        if (!this.client)
+            throw Redis_1.ERR_DB_NOT_INIT;
+        await this.client.set([key, value]);
     }
     get(key) {
         if (!this.client)
@@ -22,6 +27,11 @@ class CacheManager {
         return getAsync(key).then((result) => {
             return result;
         });
+    }
+    async incr(key) {
+        if (!this.client)
+            throw Redis_1.ERR_DB_NOT_INIT;
+        await this.client.INCR(key);
     }
 }
 exports.CacheManager = CacheManager;

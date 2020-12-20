@@ -12,10 +12,16 @@ export class CacheManager {
         });
     }
 
-    public async set(key: string, value: string, ttl: number) {
+    public async setByTTL(key: string, value: string, ttl: number) {
         if (!this.client) throw ERR_DB_NOT_INIT;
 
         await this.client.set([key, value, 'EX', ttl]);
+    }
+
+    public async set(key: string, value: string) {
+        if (!this.client) throw ERR_DB_NOT_INIT;
+
+        await this.client.set([key, value]);
     }
 
     public get(key: string) {
@@ -26,5 +32,11 @@ export class CacheManager {
         return getAsync(key).then((result: any) => {
             return result;
         });
+    }
+
+    public async incr(key: string) {
+        if (!this.client) throw ERR_DB_NOT_INIT;
+
+        await this.client.INCR(key);
     }
 }

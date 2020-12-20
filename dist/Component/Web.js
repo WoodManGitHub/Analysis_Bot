@@ -361,7 +361,7 @@ class Web {
             if (cacheDay.length !== 0) {
                 await this.processData(cacheDay, id, startTime, undefined).then(async (data) => {
                     const value = JSON.stringify(data);
-                    this.cacheManager.set(`${id}-Day`, value, cacheTTL);
+                    this.cacheManager.setByTTL(`${id}-Day`, value, cacheTTL);
                 });
             }
         });
@@ -381,7 +381,7 @@ class Web {
                 if (cacheWeek.length !== 0) {
                     await this.processData(cacheWeek, id, startTime, endTime).then(async (data) => {
                         const value = JSON.stringify(data);
-                        this.cacheManager.set(`${id}-Week`, value, cacheTTL);
+                        this.cacheManager.setByTTL(`${id}-Week`, value, cacheTTL);
                     });
                 }
             });
