@@ -56,4 +56,10 @@ export class TimeManager {
 
         return this.database.distinct(keyword);
     }
+
+    public async getCountByUserAndType(serverID: string, userID: string, startTime: number, endTime: number, type: string) {
+        if (!this.database) throw ERR_DB_NOT_INIT;
+
+        return this.database.find({ serverID, userID, timeStamp: { $gte: startTime, $lt: endTime }, type }).count();
+    }
 }

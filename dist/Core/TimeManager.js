@@ -40,6 +40,11 @@ class TimeManager {
             throw MongoDB_1.ERR_DB_NOT_INIT;
         return this.database.distinct(keyword);
     }
+    async getCountByUserAndType(serverID, userID, startTime, endTime, type) {
+        if (!this.database)
+            throw MongoDB_1.ERR_DB_NOT_INIT;
+        return this.database.find({ serverID, userID, timeStamp: { $gte: startTime, $lt: endTime }, type }).count();
+    }
 }
 exports.TimeManager = TimeManager;
 //# sourceMappingURL=TimeManager.js.map

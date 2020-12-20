@@ -2,19 +2,24 @@ import { CommandClient, Member, Message, MessageContent, VoiceChannel } from 'er
 import moment from 'moment';
 import schedule from 'node-schedule';
 import { Core } from '..';
+import { CacheManager } from '../Core/CacheManager';
 import { RankManager } from '../Core/RankManager';
 import { ITime, TimeManager } from '../Core/TimeManager';
+
+const ONE_DAY_SECONDS = 86400;
 
 export class Bot {
     private config: any;
     private bot: CommandClient;
     private timeManager: TimeManager;
     private rankManager: RankManager;
+    private cacheManager: CacheManager;
 
     constructor(core: Core) {
         this.config = core.config.bot;
         this.timeManager = core.TimeManager;
         this.rankManager = core.RankManager;
+        this.cacheManager = core.CacheManager;
 
         if (!this.config.token) throw Error('Discord token missing');
 
@@ -31,7 +36,7 @@ export class Bot {
             this.rankCron();
         });
 
-        this.bot.on('voiceChannelJoin', (member: Member, newChannel: VoiceChannel) => {
+        this.bot.on('voiceChannelJoin', async (member: Member, newChannel: VoiceChannel) => {
             const serverID = newChannel.guild.id;
             const userID = member.id;
             const joinTimeStamp = Math.round(Date.now() / 1000);
@@ -40,6 +45,9 @@ export class Bot {
             if (member.bot) return;
             const type = (afkChannel != null) ? ((newChannel.id === afkChannel) ? 'afk' : 'join') : 'join';
             this.timeManager.create(serverID, userID, joinTimeStamp, type);
+
+            // Todo
+            await this.genContinuous(serverID, userID, joinTimeStamp);
         });
 
         this.bot.on('voiceChannelLeave', (member: Member, oldChannel: VoiceChannel) => {
@@ -75,9 +83,9 @@ export class Bot {
     private async registerCommand() {
         this.bot.registerCommand('get', this.commandGet.bind(this), {
             argsRequired: true,
-            description: 'Get user online offline data.',
+            description: 'Get user online offline or continuous data.',
             guildOnly: true,
-            usage: '[day|week|month] <userID>',
+            usage: '[day|week|month|continuous] <userID>',
         });
         this.bot.registerCommand('rank', this.commandRank.bind(this), {
             argsRequired: true,
@@ -89,21 +97,22 @@ export class Bot {
 
     private async commandGet(msg: Message, args: string[]) {
         const type = args[0];
+        const serverID = msg.member!.guild.id;
         const userID = args[1];
         let user: Member | undefined;
         try {
-            user = (await this.bot.getRESTGuildMember(msg.member!.guild.id, userID));
+            user = (await this.bot.getRESTGuildMember(serverID, userID));
         } catch (e) {
             msg.channel.createMessage(await this.genErrorMessage('User not found', user));
+            return;
         }
         let startTime: number;
         let endTime: number;
-        const oneDayTime = 24 * 60 * 60;
 
         switch (type) {
             case 'day':
                 startTime = new Date().setHours(0, 0, 0, 0) / 1000;
-                endTime = startTime + oneDayTime;
+                endTime = startTime + ONE_DAY_SECONDS;
                 break;
             case 'month':
                 const year = new Date().getFullYear();
@@ -114,11 +123,16 @@ export class Bot {
             case 'week':
                 const midnight = new Date().setHours(0, 0, 0, 0) / 1000;
                 const day = new Date().getDay();
-                const monday = (midnight - (day - 1) * oneDayTime);
-                const sunday = (midnight + (7 - day) * oneDayTime);
+                const monday = (midnight - (day - 1) * ONE_DAY_SECONDS);
+                const sunday = (midnight + (7 - day) * ONE_DAY_SECONDS);
                 startTime = monday;
                 endTime = sunday;
                 break;
+            case 'continuous':
+                const nowTime = Math.floor(Date.now() / 1000);
+                const continuousDay = await this.genContinuous(serverID, userID, nowTime);
+                msg.channel.createMessage(await this.genContinuousMessage(user, continuousDay));
+                return;
         }
 
         const Time = await this.timeManager.getByUser(msg.member!.guild.id, userID, startTime!, endTime!);
@@ -174,6 +188,46 @@ export class Bot {
                 this.rankManager.update(serverID, msg.channel.id, false);
                 msg.channel.createMessage('Rank display has been turned off!');
                 break;
+        }
+    }
+
+    private async genContinuous(serverID: string, userID: string, timestamp: number) {
+        const lastKey = `${userID}-last`;
+        const continuousKey = `${userID}-continuous`;
+
+        const midnightTime = new Date().setHours(0, 0, 0, 0) / 1000;
+        const yesterdayTime = midnightTime - ONE_DAY_SECONDS;
+        const tomorrowTime = midnightTime + ONE_DAY_SECONDS;
+
+        let searchEndTime = midnightTime;
+        let searchStartTime = yesterdayTime;
+        let count = 0;
+
+        if (!(await this.cacheManager.get(continuousKey))) {
+            while (await this.timeManager.getCountByUserAndType(serverID, userID, searchStartTime, searchEndTime, 'join') !== 0) {
+                count++;
+                searchEndTime = searchStartTime;
+                searchStartTime -= ONE_DAY_SECONDS;
+            }
+
+            this.cacheManager.set(continuousKey, count.toString());
+            this.cacheManager.set(lastKey, timestamp.toString());
+        }
+
+        const lastChange = await this.cacheManager.get(lastKey);
+
+        if (lastChange >= yesterdayTime && lastChange < midnightTime) { // yesterday
+            this.cacheManager.incr(continuousKey);
+            this.cacheManager.set(lastKey, timestamp.toString());
+
+            return await this.cacheManager.get(continuousKey);
+        } else if (lastChange >= midnightTime && lastChange < tomorrowTime) { // today
+            return await this.cacheManager.get(continuousKey);
+        } else {
+            this.cacheManager.set(continuousKey, '1');
+            this.cacheManager.set(lastKey, timestamp.toString());
+
+            return await this.cacheManager.get(continuousKey);
         }
     }
 
@@ -388,6 +442,24 @@ export class Bot {
                 description: `${this.config.embed.rank.description} - (${moment().subtract(1, 'days').format('YYYY/MM/DD')})`,
                 fields,
                 title: 'Rank'
+            }
+        } as MessageContent;
+    }
+
+    private async genContinuousMessage(user: Member, continuousDay: number) {
+        const tenthNumber = (continuousDay / 10) % 10;
+        const oneNumber = continuousDay % 10;
+
+        const day = continuousDay + ((tenthNumber === 1 || (oneNumber === 0 || oneNumber >= 4)) ? 'th' : ((oneNumber === 1) ? 'st' : ((oneNumber === 2) ? 'nd' : 'rd')));
+
+        return {
+            embed: {
+                color: this.config.embed.color,
+                author: {
+                    name: user.nick ? user.nick : user.username,
+                    icon_url: user.avatarURL
+                },
+                description: `Joined the voice channel for the **${day}** consecutive day`
             }
         } as MessageContent;
     }

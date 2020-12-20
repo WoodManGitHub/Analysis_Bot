@@ -6,11 +6,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const eris_1 = require("eris");
 const moment_1 = __importDefault(require("moment"));
 const node_schedule_1 = __importDefault(require("node-schedule"));
+const ONE_DAY_SECONDS = 86400;
 class Bot {
     constructor(core) {
         this.config = core.config.bot;
         this.timeManager = core.TimeManager;
         this.rankManager = core.RankManager;
+        this.cacheManager = core.CacheManager;
         if (!this.config.token)
             throw Error('Discord token missing');
         this.bot = new eris_1.CommandClient(this.config.token, { restMode: true }, { prefix: this.config.prefix });
@@ -20,7 +22,7 @@ class Bot {
             core.emit('discordReady');
             this.rankCron();
         });
-        this.bot.on('voiceChannelJoin', (member, newChannel) => {
+        this.bot.on('voiceChannelJoin', async (member, newChannel) => {
             const serverID = newChannel.guild.id;
             const userID = member.id;
             const joinTimeStamp = Math.round(Date.now() / 1000);
@@ -29,6 +31,7 @@ class Bot {
                 return;
             const type = (afkChannel != null) ? ((newChannel.id === afkChannel) ? 'afk' : 'join') : 'join';
             this.timeManager.create(serverID, userID, joinTimeStamp, type);
+            await this.genContinuous(serverID, userID, joinTimeStamp);
         });
         this.bot.on('voiceChannelLeave', (member, oldChannel) => {
             const serverID = oldChannel.guild.id;
@@ -60,9 +63,9 @@ class Bot {
     async registerCommand() {
         this.bot.registerCommand('get', this.commandGet.bind(this), {
             argsRequired: true,
-            description: 'Get user online offline data.',
+            description: 'Get user online offline or continuous data.',
             guildOnly: true,
-            usage: '[day|week|month] <userID>',
+            usage: '[day|week|month|continuous] <userID>',
         });
         this.bot.registerCommand('rank', this.commandRank.bind(this), {
             argsRequired: true,
@@ -73,21 +76,22 @@ class Bot {
     }
     async commandGet(msg, args) {
         const type = args[0];
+        const serverID = msg.member.guild.id;
         const userID = args[1];
         let user;
         try {
-            user = (await this.bot.getRESTGuildMember(msg.member.guild.id, userID));
+            user = (await this.bot.getRESTGuildMember(serverID, userID));
         }
         catch (e) {
             msg.channel.createMessage(await this.genErrorMessage('User not found', user));
+            return;
         }
         let startTime;
         let endTime;
-        const oneDayTime = 24 * 60 * 60;
         switch (type) {
             case 'day':
                 startTime = new Date().setHours(0, 0, 0, 0) / 1000;
-                endTime = startTime + oneDayTime;
+                endTime = startTime + ONE_DAY_SECONDS;
                 break;
             case 'month':
                 const year = new Date().getFullYear();
@@ -98,11 +102,16 @@ class Bot {
             case 'week':
                 const midnight = new Date().setHours(0, 0, 0, 0) / 1000;
                 const day = new Date().getDay();
-                const monday = (midnight - (day - 1) * oneDayTime);
-                const sunday = (midnight + (7 - day) * oneDayTime);
+                const monday = (midnight - (day - 1) * ONE_DAY_SECONDS);
+                const sunday = (midnight + (7 - day) * ONE_DAY_SECONDS);
                 startTime = monday;
                 endTime = sunday;
                 break;
+            case 'continuous':
+                const nowTime = Math.floor(Date.now() / 1000);
+                const continuousDay = await this.genContinuous(serverID, userID, nowTime);
+                msg.channel.createMessage(await this.genContinuousMessage(user, continuousDay));
+                return;
         }
         const Time = await this.timeManager.getByUser(msg.member.guild.id, userID, startTime, endTime);
         this.genTimeData(Time, msg.member.guild.id, startTime, undefined).then(async (result) => {
@@ -158,6 +167,39 @@ class Bot {
                 this.rankManager.update(serverID, msg.channel.id, false);
                 msg.channel.createMessage('Rank display has been turned off!');
                 break;
+        }
+    }
+    async genContinuous(serverID, userID, timestamp) {
+        const lastKey = `${userID}-last`;
+        const continuousKey = `${userID}-continuous`;
+        const midnightTime = new Date().setHours(0, 0, 0, 0) / 1000;
+        const yesterdayTime = midnightTime - ONE_DAY_SECONDS;
+        const tomorrowTime = midnightTime + ONE_DAY_SECONDS;
+        let searchEndTime = midnightTime;
+        let searchStartTime = yesterdayTime;
+        let count = 0;
+        if (!(await this.cacheManager.get(continuousKey))) {
+            while (await this.timeManager.getCountByUserAndType(serverID, userID, searchStartTime, searchEndTime, 'join') !== 0) {
+                count++;
+                searchEndTime = searchStartTime;
+                searchStartTime -= ONE_DAY_SECONDS;
+            }
+            this.cacheManager.set(continuousKey, count.toString());
+            this.cacheManager.set(lastKey, timestamp.toString());
+        }
+        const lastChange = await this.cacheManager.get(lastKey);
+        if (lastChange >= yesterdayTime && lastChange < midnightTime) {
+            this.cacheManager.incr(continuousKey);
+            this.cacheManager.set(lastKey, timestamp.toString());
+            return await this.cacheManager.get(continuousKey);
+        }
+        else if (lastChange >= midnightTime && lastChange < tomorrowTime) {
+            return await this.cacheManager.get(continuousKey);
+        }
+        else {
+            this.cacheManager.set(continuousKey, '1');
+            this.cacheManager.set(lastKey, timestamp.toString());
+            return await this.cacheManager.get(continuousKey);
         }
     }
     async genTimeData(raw, serverID, startTime, endTime) {
@@ -361,6 +403,21 @@ class Bot {
                 description: `${this.config.embed.rank.description} - (${moment_1.default().subtract(1, 'days').format('YYYY/MM/DD')})`,
                 fields,
                 title: 'Rank'
+            }
+        };
+    }
+    async genContinuousMessage(user, continuousDay) {
+        const tenthNumber = (continuousDay / 10) % 10;
+        const oneNumber = continuousDay % 10;
+        const day = continuousDay + ((tenthNumber === 1 || (oneNumber === 0 || oneNumber >= 4)) ? 'th' : ((oneNumber === 1) ? 'st' : ((oneNumber === 2) ? 'nd' : 'rd')));
+        return {
+            embed: {
+                color: this.config.embed.color,
+                author: {
+                    name: user.nick ? user.nick : user.username,
+                    icon_url: user.avatarURL
+                },
+                description: `Joined the voice channel for the **${day}** consecutive day`
             }
         };
     }
