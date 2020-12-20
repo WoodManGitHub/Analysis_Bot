@@ -28,5 +28,5 @@ jobs:
         if: github.event_name == 'push'
         run: |
           REF_SLUG=$([ "$GITHUB_REF" = "refs/heads/master" ] && echo "latest" || echo ${GITHUB_REF##*/})
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/voicelog:$REF_SLUG .
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/voicelog:$REF_SLUG
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/analysis-bot:$REF_SLUG .
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/analysis-bot:$REF_SLUG
