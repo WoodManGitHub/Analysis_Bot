@@ -5,7 +5,14 @@
         "admin": [
             "userID"
         ],
-        "rankDescription": "Rank description"
+        "embed": {
+            "color": 4886754,
+            "errorColor": 13632027,
+            "rank": {
+                "description": "Rank"
+            }
+        },
+        "messageCooldownSecond": 300
     },
     "database": {
         "host": "mongodb://localhost:27017",

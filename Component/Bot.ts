@@ -3,7 +3,7 @@ import moment from 'moment';
 import schedule from 'node-schedule';
 import { Core } from '..';
 import { CacheManager } from '../Core/CacheManager';
-import { RankManager } from '../Core/RankManager';
+import { SetManager } from '../Core/SetManager';
 import { ITime, TimeManager } from '../Core/TimeManager';
 
 const ONE_DAY_SECONDS = 86400;
@@ -12,14 +12,16 @@ export class Bot {
     private config: any;
     private bot: CommandClient;
     private timeManager: TimeManager;
-    private rankManager: RankManager;
     private cacheManager: CacheManager;
+    private setManager: SetManager;
+    private cooldown: any;
 
     constructor(core: Core) {
         this.config = core.config.bot;
         this.timeManager = core.TimeManager;
-        this.rankManager = core.RankManager;
         this.cacheManager = core.CacheManager;
+        this.setManager = core.SetManager;
+        this.cooldown = new Set();
 
         if (!this.config.token) throw Error('Discord token missing');
 
@@ -46,8 +48,20 @@ export class Bot {
             const type = (afkChannel != null) ? ((newChannel.id === afkChannel) ? 'afk' : 'join') : 'join';
             this.timeManager.create(serverID, userID, joinTimeStamp, type);
 
-            // Todo
-            await this.genContinuous(serverID, userID, joinTimeStamp);
+            this.genContinuous(serverID, userID, joinTimeStamp).then(async result => {
+                if (this.cooldown.has(userID)) return;
+                this.cooldown.add(userID);
+                const serverSetting = await this.setManager.get(serverID);
+                if (serverSetting.length === 0) return;
+                const serverSettingData = serverSetting[0];
+                if (serverSettingData.settings.continuousDisplay) {
+                    this.bot.createMessage(serverSettingData.settings.continuousChannelID, await this.genContinuousMessage(member, result));
+                }
+
+                setTimeout(() => {
+                    this.cooldown.delete(userID);
+                }, this.config.messageCooldownSecond * 1000);
+            });
         });
 
         this.bot.on('voiceChannelLeave', (member: Member, oldChannel: VoiceChannel) => {
@@ -87,11 +101,11 @@ export class Bot {
             guildOnly: true,
             usage: '[day|week|month|continuous] <userID>',
         });
-        this.bot.registerCommand('rank', this.commandRank.bind(this), {
+        this.bot.registerCommand('setting', this.commandSet.bind(this), {
             argsRequired: true,
-            description: 'Switch rank display.',
+            description: 'Setting rank and continuous display',
             guildOnly: true,
-            usage: '[on|off]',
+            usage: '[rank|continuous|view] [on|off]',
         });
     }
 
@@ -173,20 +187,46 @@ export class Bot {
         });
     }
 
-    private async commandRank(msg: Message, args: string[]) {
+    private async commandSet(msg: Message, args: string[]) {
         const serverID = msg.member!.guild.id;
+
         if (!(msg.member!.permission.has('manageMessages')) && !(this.config.admin.includes(msg.member!.id))) {
             msg.channel.createMessage('You do not have permission!');
             return;
         }
+
+        const data = await this.setManager.get(serverID);
+        if (data.length === 0) {
+            await this.setManager.create(serverID);
+        }
+
         switch (args[0]) {
-            case 'on':
-                this.rankManager.update(serverID, msg.channel.id, true);
-                msg.channel.createMessage('Rank display has been turned on!\nI\'ll now send ranking every day at 0:00 to this channel.');
+            case 'rank':
+                if (args[1] === 'on') {
+                    this.setManager.update(serverID, msg.channel.id, true, null, null);
+                    msg.channel.createMessage('Rank display has been turned on!\nI\'ll now send ranking every day at 0:00 to this channel.');
+                } else if (args[1] === 'off') {
+                    this.setManager.update(serverID, msg.channel.id, false, null, null);
+                    msg.channel.createMessage('Rank display has been turned off!');
+                }
                 break;
-            case 'off':
-                this.rankManager.update(serverID, msg.channel.id, false);
-                msg.channel.createMessage('Rank display has been turned off!');
+            case 'continuous':
+                if (args[1] === 'on') {
+                    this.setManager.update(serverID, null, null, msg.channel.id, true);
+                    msg.channel.createMessage('Continuous display has been turned on!\nI\'ll now send continuous status to this channel on user joined voice channel.');
+                } else if (args[1] === 'off') {
+                    this.setManager.update(serverID, null, null, msg.channel.id, false);
+                    msg.channel.createMessage('Continuous display has been turned off!');
+                }
+                break;
+            case 'view':
+                const setting = await this.setManager.get(serverID);
+                if (setting.length !== 0) {
+                    const settingData = setting[0];
+                    msg.channel.createMessage(`Rank: **${settingData.settings.rankDisplay}**\nContinuous: **${settingData.settings.continuousDisplay}**`);
+                } else {
+                    msg.channel.createMessage('Not setting data on this server.');
+                }
                 break;
         }
     }
@@ -482,10 +522,10 @@ export class Bot {
 
     private rankCron() {
         schedule.scheduleJob('0 0 * * *', async () => {
-            const settings = await this.rankManager.getAll();
+            const settings = await this.setManager.getAll();
 
             settings.forEach(async setting => {
-                if (setting.rankDisplay) {
+                if (setting.settings.rankDisplay) {
                     const endTime = new Date().setHours(0, 0, 0, 0) / 1000;
                     const startTime = endTime - 86400;
                     const time = await this.timeManager.get(setting.serverID, startTime, endTime);
@@ -501,7 +541,7 @@ export class Bot {
                         dataAsArray.sort((a, b) => {
                             return b.online - a.online;
                         });
-                        this.bot.createMessage(setting.channelID, await this.genRankMessage(dataAsArray));
+                        this.bot.createMessage(setting.settings.rankChannelID, await this.genRankMessage(dataAsArray));
                     });
                 }
             });

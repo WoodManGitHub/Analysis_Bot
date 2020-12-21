@@ -5,8 +5,8 @@ import { Bot } from './Component/Bot';
 import { Web } from './Component/Web';
 import { CacheManager } from './Core/CacheManager';
 import { MongoDB } from './Core/MongoDB';
-import { RankManager } from './Core/RankManager';
 import { Redis } from './Core/Redis';
+import { SetManager } from './Core/SetManager';
 import { TimeManager } from './Core/TimeManager';
 
 export class Core extends EventEmitter {
@@ -14,8 +14,8 @@ export class Core extends EventEmitter {
     public readonly database = new MongoDB(this.config);
     public readonly cache = new Redis(this.config);
     public readonly TimeManager = new TimeManager(this);
-    public readonly RankManager = new RankManager(this);
     public readonly CacheManager = new CacheManager(this);
+    public readonly SetManager = new SetManager(this);
     public bot: CommandClient | null | undefined;
 
     constructor() {
