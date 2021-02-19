@@ -51,7 +51,7 @@ export class Web {
     }
 
     private runServer(port: number) {
-        const host = process.env.HOST || 'localhost';
+        const host = this.config.host;
         this.server.listen(port, host, () => {
             console.log(`[Web] Ready! Host: ${host}:${port}`);
         });
