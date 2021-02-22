@@ -5,6 +5,7 @@ import express from 'express';
 import helmet from 'helmet';
 import { getStatusCode, ReasonPhrases, StatusCodes } from 'http-status-codes';
 import moment from 'moment';
+import morgan from 'morgan';
 import fetch from 'node-fetch';
 import schedule from 'node-schedule';
 import SunCalc from 'suncalc';
@@ -62,6 +63,7 @@ export class Web {
         this.server.use(cors({ origin: this.config.origin }));
         this.server.use(helmet());
         this.server.use(this.checkRequst);
+        this.server.use(morgan('[Web] :remote-addr [:date[clf]] ":method :url HTTP/:http-version" :status :response-time ms - :res[content-length]'));
     }
 
     private async checkRequst(req: Request, res: Response, next: NextFunction) {
