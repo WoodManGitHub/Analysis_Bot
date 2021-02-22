@@ -8,6 +8,7 @@ const express_1 = __importDefault(require("express"));
 const helmet_1 = __importDefault(require("helmet"));
 const http_status_codes_1 = require("http-status-codes");
 const moment_1 = __importDefault(require("moment"));
+const morgan_1 = __importDefault(require("morgan"));
 const node_fetch_1 = __importDefault(require("node-fetch"));
 const node_schedule_1 = __importDefault(require("node-schedule"));
 const suncalc_1 = __importDefault(require("suncalc"));
@@ -50,6 +51,7 @@ class Web {
         this.server.use(cors_1.default({ origin: this.config.origin }));
         this.server.use(helmet_1.default());
         this.server.use(this.checkRequst);
+        this.server.use(morgan_1.default('[Web] :remote-addr [:date[clf]] ":method :url HTTP/:http-version" :status :response-time ms - :res[content-length]'));
     }
     async checkRequst(req, res, next) {
         const reqURL = url_1.parse(req.url).query;
