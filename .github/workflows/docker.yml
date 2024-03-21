@@ -3,7 +3,7 @@ on: [push, pull_request]
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: Analysis_Bot/${{ github.repository }}
 
 jobs:
   build-and-push-image:
