@@ -5,16 +5,17 @@ import { Core } from '..';
 import { CacheManager } from '../Core/CacheManager';
 import { SetManager } from '../Core/SetManager';
 import { ITime, TimeManager } from '../Core/TimeManager';
+import { BotConfig } from '../Core/Config';
 
 const ONE_DAY_SECONDS = 86400;
 
 export class Bot {
-    private config: any;
+    private config: BotConfig;
     private bot: CommandClient;
     private timeManager: TimeManager;
     private cacheManager: CacheManager;
     private setManager: SetManager;
-    private cooldown: any;
+    private cooldown: Set<string>;
 
     constructor(core: Core) {
         this.config = core.config.bot;
@@ -27,7 +28,7 @@ export class Bot {
 
         this.bot = new CommandClient(
             this.config.token,
-            { restMode: true },
+            { restMode: true, intents: ['guilds', 'guildIntegrations', 'guildMessages', 'guildVoiceStates', 'guildMembers'] },
             { prefix: this.config.prefix }
         );
 
@@ -38,14 +39,14 @@ export class Bot {
             this.rankCron();
         });
 
-        this.bot.on('voiceChannelJoin', async (member: Member, newChannel: VoiceChannel) => {
+        this.bot.on('voiceChannelJoin', async(member: Member, newChannel: VoiceChannel) => {
             const serverID = newChannel.guild.id;
             const userID = member.id;
             const joinTimeStamp = Math.round(Date.now() / 1000);
             const afkChannel = newChannel.guild.afkChannelID;
 
             if (member.bot) return;
-            const type = (afkChannel != null) ? ((newChannel.id === afkChannel) ? 'afk' : 'join') : 'join';
+            const type = (afkChannel !== null) ? ((newChannel.id === afkChannel) ? 'afk' : 'join') : 'join';
             this.timeManager.create(serverID, userID, joinTimeStamp, type);
 
             this.genContinuous(serverID, userID, joinTimeStamp).then(async result => {
@@ -99,13 +100,13 @@ export class Bot {
             argsRequired: true,
             description: 'Get user online offline or continuous data.',
             guildOnly: true,
-            usage: '[day|week|month|continuous] <userID>',
+            usage: '[day|week|month|continuous] <userID>'
         });
         this.bot.registerCommand('setting', this.commandSet.bind(this), {
             argsRequired: true,
             description: 'Setting rank and continuous display',
             guildOnly: true,
-            usage: '[rank|continuous|view] [on|off]',
+            usage: '[rank|continuous|view] [on|off]'
         });
     }
 
@@ -123,28 +124,29 @@ export class Bot {
         let startTime: number;
         let endTime: number;
 
+        const year = new Date().getFullYear();
+        const month = new Date().getMonth() + 1;
+        const midnight = new Date().setHours(0, 0, 0, 0) / 1000;
+        const day = new Date().getDay();
+        const monday = (midnight - (day - 1) * ONE_DAY_SECONDS);
+        const sunday = (midnight + (7 - day) * ONE_DAY_SECONDS);
+        const nowTime = Math.floor(Date.now() / 1000);
+        const continuousDay = await this.genContinuous(serverID, userID, nowTime);
+
         switch (type) {
             case 'day':
                 startTime = new Date().setHours(0, 0, 0, 0) / 1000;
                 endTime = startTime + ONE_DAY_SECONDS;
                 break;
             case 'month':
-                const year = new Date().getFullYear();
-                const month = new Date().getMonth() + 1;
                 startTime = new Date(year, month, 0).setDate(1) / 1000;
                 endTime = new Date(year, month, 0).getTime() / 1000;
                 break;
             case 'week':
-                const midnight = new Date().setHours(0, 0, 0, 0) / 1000;
-                const day = new Date().getDay();
-                const monday = (midnight - (day - 1) * ONE_DAY_SECONDS);
-                const sunday = (midnight + (7 - day) * ONE_DAY_SECONDS);
                 startTime = monday;
                 endTime = sunday;
                 break;
             case 'continuous':
-                const nowTime = Math.floor(Date.now() / 1000);
-                const continuousDay = await this.genContinuous(serverID, userID, nowTime);
                 msg.channel.createMessage(await this.genContinuousMessage(user, continuousDay));
                 return;
         }
@@ -190,7 +192,7 @@ export class Bot {
     private async commandSet(msg: Message, args: string[]) {
         const serverID = msg.member!.guild.id;
 
-        if (!(msg.member!.permission.has('manageMessages')) && !(this.config.admin.includes(msg.member!.id))) {
+        if (!(msg.member!.permissions.has('manageMessages')) && !(this.config.admin.includes(msg.member!.id))) {
             msg.channel.createMessage('You do not have permission!');
             return;
         }
@@ -200,6 +202,7 @@ export class Bot {
             await this.setManager.create(serverID);
         }
 
+        const setting = await this.setManager.get(serverID);
         switch (args[0]) {
             case 'rank':
                 if (args[1] === 'on') {
@@ -220,7 +223,6 @@ export class Bot {
                 }
                 break;
             case 'view':
-                const setting = await this.setManager.get(serverID);
                 if (setting.length !== 0) {
                     const settingData = setting[0];
                     msg.channel.createMessage(`Rank: **${settingData.settings.rankDisplay}**\nContinuous: **${settingData.settings.continuousDisplay}**`);
@@ -254,21 +256,21 @@ export class Bot {
             this.cacheManager.set(lastKey, timestamp.toString());
         }
 
-        const lastChange = await this.cacheManager.get(lastKey);
+        const lastChange = parseInt(await this.cacheManager.get(lastKey) ?? timestamp.toString());
 
         if (lastChange >= yesterdayTime && lastChange < midnightTime) { // yesterday
             this.cacheManager.incr(continuousKey);
             this.cacheManager.set(lastKey, timestamp.toString());
 
-            return await this.cacheManager.get(continuousKey);
+            return parseInt(await this.cacheManager.get(continuousKey) ?? count.toString());
         } else if (lastChange >= midnightTime && lastChange < tomorrowTime) { // today
-            return await this.cacheManager.get(continuousKey);
-        } else {
-            this.cacheManager.set(continuousKey, '1');
-            this.cacheManager.set(lastKey, timestamp.toString());
-
-            return await this.cacheManager.get(continuousKey);
+            return parseInt(await this.cacheManager.get(continuousKey) ?? count.toString());
         }
+        this.cacheManager.set(continuousKey, '1');
+        this.cacheManager.set(lastKey, timestamp.toString());
+
+        return parseInt(await this.cacheManager.get(continuousKey) ?? '1');
+
     }
 
     private async genTimeData(raw: ITime[], serverID: string, startTime: number | undefined, endTime: number | undefined) {
@@ -437,14 +439,15 @@ export class Bot {
                 description: text,
                 title: 'Error'
             } : {
-                    color: this.config.embed.errorColor,
-                    author: {
-                        name: user.nick ? user.nick : user.username,
-                        icon_url: user.avatarURL
-                    },
-                    description: text,
-                    title: 'Error'
-                }
+                color: this.config.embed.errorColor,
+                author: {
+                    name: user.nick ? user.nick : user.username,
+                    // eslint-disable-next-line camelcase
+                    icon_url: user.avatarURL
+                },
+                description: text,
+                title: 'Error'
+            }
         } as MessageContent;
     }
 
@@ -460,6 +463,7 @@ export class Bot {
                 color: this.config.embed.color,
                 author: {
                     name: user.nick ? user.nick : user.username,
+                    // eslint-disable-next-line camelcase
                     icon_url: user.avatarURL
                 },
                 fields,
@@ -497,6 +501,7 @@ export class Bot {
                 color: this.config.embed.color,
                 author: {
                     name: user.nick ? user.nick : user.username,
+                    // eslint-disable-next-line camelcase
                     icon_url: user.avatarURL
                 },
                 description: `Joined the voice channel for the **${day}** consecutive day`
@@ -521,7 +526,7 @@ export class Bot {
     }
 
     private rankCron() {
-        schedule.scheduleJob('0 0 * * *', async () => {
+        schedule.scheduleJob('0 0 * * *', async() => {
             const settings = await this.setManager.getAll();
 
             settings.forEach(async setting => {

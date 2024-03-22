@@ -1,7 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.TimeManager = void 0;
 const MongoDB_1 = require("./MongoDB");
 class TimeManager {
+    database;
     constructor(core) {
         core.on('ready', () => {
             if (!core.database.client)
