@@ -3,11 +3,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Bot = void 0;
 const eris_1 = require("eris");
 const moment_1 = __importDefault(require("moment"));
 const node_schedule_1 = __importDefault(require("node-schedule"));
 const ONE_DAY_SECONDS = 86400;
 class Bot {
+    config;
+    bot;
+    timeManager;
+    cacheManager;
+    setManager;
+    cooldown;
     constructor(core) {
         this.config = core.config.bot;
         this.timeManager = core.TimeManager;
@@ -16,7 +23,7 @@ class Bot {
         this.cooldown = new Set();
         if (!this.config.token)
             throw Error('Discord token missing');
-        this.bot = new eris_1.CommandClient(this.config.token, { restMode: true }, { prefix: this.config.prefix });
+        this.bot = new eris_1.CommandClient(this.config.token, { restMode: true, intents: ['guilds', 'guildIntegrations', 'guildMessages', 'guildVoiceStates', 'guildMembers'] }, { prefix: this.config.prefix });
         this.bot.on('ready', () => {
             console.log('[Discord] Ready!');
             core.bot = this.bot;
@@ -30,7 +37,7 @@ class Bot {
             const afkChannel = newChannel.guild.afkChannelID;
             if (member.bot)
                 return;
-            const type = (afkChannel != null) ? ((newChannel.id === afkChannel) ? 'afk' : 'join') : 'join';
+            const type = (afkChannel !== null) ? ((newChannel.id === afkChannel) ? 'afk' : 'join') : 'join';
             this.timeManager.create(serverID, userID, joinTimeStamp, type);
             this.genContinuous(serverID, userID, joinTimeStamp).then(async (result) => {
                 if (this.cooldown.has(userID))
@@ -80,13 +87,13 @@ class Bot {
             argsRequired: true,
             description: 'Get user online offline or continuous data.',
             guildOnly: true,
-            usage: '[day|week|month|continuous] <userID>',
+            usage: '[day|week|month|continuous] <userID>'
         });
         this.bot.registerCommand('setting', this.commandSet.bind(this), {
             argsRequired: true,
             description: 'Setting rank and continuous display',
             guildOnly: true,
-            usage: '[rank|continuous|view] [on|off]',
+            usage: '[rank|continuous|view] [on|off]'
         });
     }
     async commandGet(msg, args) {
@@ -103,28 +110,28 @@ class Bot {
         }
         let startTime;
         let endTime;
+        const year = new Date().getFullYear();
+        const month = new Date().getMonth() + 1;
+        const midnight = new Date().setHours(0, 0, 0, 0) / 1000;
+        const day = new Date().getDay();
+        const monday = (midnight - (day - 1) * ONE_DAY_SECONDS);
+        const sunday = (midnight + (7 - day) * ONE_DAY_SECONDS);
+        const nowTime = Math.floor(Date.now() / 1000);
+        const continuousDay = await this.genContinuous(serverID, userID, nowTime);
         switch (type) {
             case 'day':
                 startTime = new Date().setHours(0, 0, 0, 0) / 1000;
                 endTime = startTime + ONE_DAY_SECONDS;
                 break;
             case 'month':
-                const year = new Date().getFullYear();
-                const month = new Date().getMonth() + 1;
                 startTime = new Date(year, month, 0).setDate(1) / 1000;
                 endTime = new Date(year, month, 0).getTime() / 1000;
                 break;
             case 'week':
-                const midnight = new Date().setHours(0, 0, 0, 0) / 1000;
-                const day = new Date().getDay();
-                const monday = (midnight - (day - 1) * ONE_DAY_SECONDS);
-                const sunday = (midnight + (7 - day) * ONE_DAY_SECONDS);
                 startTime = monday;
                 endTime = sunday;
                 break;
             case 'continuous':
-                const nowTime = Math.floor(Date.now() / 1000);
-                const continuousDay = await this.genContinuous(serverID, userID, nowTime);
                 msg.channel.createMessage(await this.genContinuousMessage(user, continuousDay));
                 return;
         }
@@ -169,7 +176,7 @@ class Bot {
     }
     async commandSet(msg, args) {
         const serverID = msg.member.guild.id;
-        if (!(msg.member.permission.has('manageMessages')) && !(this.config.admin.includes(msg.member.id))) {
+        if (!(msg.member.permissions.has('manageMessages')) && !(this.config.admin.includes(msg.member.id))) {
             msg.channel.createMessage('You do not have permission!');
             return;
         }
@@ -177,6 +184,7 @@ class Bot {
         if (data.length === 0) {
             await this.setManager.create(serverID);
         }
+        const setting = await this.setManager.get(serverID);
         switch (args[0]) {
             case 'rank':
                 if (args[1] === 'on') {
@@ -199,7 +207,6 @@ class Bot {
                 }
                 break;
             case 'view':
-                const setting = await this.setManager.get(serverID);
                 if (setting.length !== 0) {
                     const settingData = setting[0];
                     msg.channel.createMessage(`Rank: **${settingData.settings.rankDisplay}**\nContinuous: **${settingData.settings.continuousDisplay}**`);
@@ -228,20 +235,18 @@ class Bot {
             this.cacheManager.set(continuousKey, count.toString());
             this.cacheManager.set(lastKey, timestamp.toString());
         }
-        const lastChange = await this.cacheManager.get(lastKey);
+        const lastChange = parseInt(await this.cacheManager.get(lastKey) ?? timestamp.toString());
         if (lastChange >= yesterdayTime && lastChange < midnightTime) {
             this.cacheManager.incr(continuousKey);
             this.cacheManager.set(lastKey, timestamp.toString());
-            return await this.cacheManager.get(continuousKey);
+            return parseInt(await this.cacheManager.get(continuousKey) ?? count.toString());
         }
         else if (lastChange >= midnightTime && lastChange < tomorrowTime) {
-            return await this.cacheManager.get(continuousKey);
+            return parseInt(await this.cacheManager.get(continuousKey) ?? count.toString());
         }
-        else {
-            this.cacheManager.set(continuousKey, '1');
-            this.cacheManager.set(lastKey, timestamp.toString());
-            return await this.cacheManager.get(continuousKey);
-        }
+        this.cacheManager.set(continuousKey, '1');
+        this.cacheManager.set(lastKey, timestamp.toString());
+        return parseInt(await this.cacheManager.get(continuousKey) ?? '1');
     }
     async genTimeData(raw, serverID, startTime, endTime) {
         const dataRaw = {};
@@ -291,11 +296,11 @@ class Bot {
                                 break;
                             }
                             case 'leave': {
-                                offlineTotal += moment_1.default(activity.time).diff(lastActivity.time, 'seconds');
+                                offlineTotal += (0, moment_1.default)(activity.time).diff(lastActivity.time, 'seconds');
                                 break;
                             }
                             case 'afk': {
-                                afkTotal += moment_1.default(activity.time).diff(lastActivity.time, 'seconds');
+                                afkTotal += (0, moment_1.default)(activity.time).diff(lastActivity.time, 'seconds');
                                 break;
                             }
                             case 'back': {
@@ -308,7 +313,7 @@ class Bot {
                     case 'leave': {
                         switch (lastActivity.type) {
                             case 'join': {
-                                onlineTotal += moment_1.default(activity.time).diff(lastActivity.time, 'seconds');
+                                onlineTotal += (0, moment_1.default)(activity.time).diff(lastActivity.time, 'seconds');
                                 break;
                             }
                             case 'leave': {
@@ -316,11 +321,11 @@ class Bot {
                                 break;
                             }
                             case 'afk': {
-                                afkTotal += moment_1.default(activity.time).diff(lastActivity.time, 'seconds');
+                                afkTotal += (0, moment_1.default)(activity.time).diff(lastActivity.time, 'seconds');
                                 break;
                             }
                             case 'back': {
-                                onlineTotal += moment_1.default(activity.time).diff(lastActivity.time, 'seconds');
+                                onlineTotal += (0, moment_1.default)(activity.time).diff(lastActivity.time, 'seconds');
                                 break;
                             }
                         }
@@ -329,11 +334,11 @@ class Bot {
                     case 'afk': {
                         switch (lastActivity.type) {
                             case 'join': {
-                                onlineTotal += moment_1.default(activity.time).diff(lastActivity.time, 'seconds');
+                                onlineTotal += (0, moment_1.default)(activity.time).diff(lastActivity.time, 'seconds');
                                 break;
                             }
                             case 'leave': {
-                                offlineTotal += moment_1.default(activity.time).diff(lastActivity.time, 'seconds');
+                                offlineTotal += (0, moment_1.default)(activity.time).diff(lastActivity.time, 'seconds');
                                 break;
                             }
                             case 'afk': {
@@ -341,7 +346,7 @@ class Bot {
                                 break;
                             }
                             case 'back': {
-                                onlineTotal += moment_1.default(activity.time).diff(lastActivity.time, 'seconds');
+                                onlineTotal += (0, moment_1.default)(activity.time).diff(lastActivity.time, 'seconds');
                                 break;
                             }
                         }
@@ -354,11 +359,11 @@ class Bot {
                                 break;
                             }
                             case 'leave': {
-                                offlineTotal += moment_1.default(activity.time).diff(lastActivity.time, 'seconds');
+                                offlineTotal += (0, moment_1.default)(activity.time).diff(lastActivity.time, 'seconds');
                                 break;
                             }
                             case 'afk': {
-                                afkTotal += moment_1.default(activity.time).diff(lastActivity.time, 'seconds');
+                                afkTotal += (0, moment_1.default)(activity.time).diff(lastActivity.time, 'seconds');
                                 break;
                             }
                             case 'back': {
@@ -373,22 +378,22 @@ class Bot {
                     lastActivity = activity;
             }
             if (lastActivity !== undefined) {
-                const now = ((endTime !== undefined) ? moment_1.default.unix(endTime) : moment_1.default()).format('YYYY-MM-DD HH:mm:ss');
+                const now = ((endTime !== undefined) ? moment_1.default.unix(endTime) : (0, moment_1.default)()).format('YYYY-MM-DD HH:mm:ss');
                 switch (lastActivity.type) {
                     case 'join': {
-                        onlineTotal += moment_1.default(now).diff(lastActivity.time, 'seconds');
+                        onlineTotal += (0, moment_1.default)(now).diff(lastActivity.time, 'seconds');
                         break;
                     }
                     case 'leave': {
-                        offlineTotal += moment_1.default(now).diff(lastActivity.time, 'seconds');
+                        offlineTotal += (0, moment_1.default)(now).diff(lastActivity.time, 'seconds');
                         break;
                     }
                     case 'afk': {
-                        afkTotal += moment_1.default(now).diff(lastActivity.time, 'seconds');
+                        afkTotal += (0, moment_1.default)(now).diff(lastActivity.time, 'seconds');
                         break;
                     }
                     case 'back': {
-                        onlineTotal += moment_1.default(now).diff(lastActivity.time, 'seconds');
+                        onlineTotal += (0, moment_1.default)(now).diff(lastActivity.time, 'seconds');
                         break;
                     }
                 }
@@ -441,7 +446,7 @@ class Bot {
         return {
             embed: {
                 color: this.config.embed.color,
-                description: `${this.config.embed.rank.description} - (${moment_1.default().subtract(1, 'days').format('YYYY/MM/DD')})`,
+                description: `${this.config.embed.rank.description} - (${(0, moment_1.default)().subtract(1, 'days').format('YYYY/MM/DD')})`,
                 fields,
                 title: 'Rank'
             }

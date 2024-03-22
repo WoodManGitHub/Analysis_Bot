@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Web = void 0;
 const cors_1 = __importDefault(require("cors"));
 const express_1 = __importDefault(require("express"));
 const helmet_1 = __importDefault(require("helmet"));
@@ -15,17 +16,22 @@ const suncalc_1 = __importDefault(require("suncalc"));
 const url_1 = require("url");
 const ONE_DAY_SECONDS = 86400;
 class Web {
+    config;
+    server;
+    timeManager;
+    cacheManager;
+    Bot;
     constructor(core) {
         this.config = core.config.web;
         this.timeManager = core.TimeManager;
         this.cacheManager = core.CacheManager;
-        if (core.bot != null || core.bot !== undefined) {
+        if (core.bot !== null || core.bot !== undefined) {
             this.Bot = core.bot;
         }
         else {
             throw new Error('Discord Client not defined');
         }
-        this.server = express_1.default();
+        this.server = (0, express_1.default)();
         this.middlewares();
         this.registerRoutes();
         this.errorHandler();
@@ -48,13 +54,13 @@ class Web {
     }
     async middlewares() {
         this.server.use(express_1.default.json());
-        this.server.use(cors_1.default({ origin: this.config.origin }));
-        this.server.use(helmet_1.default());
+        this.server.use((0, cors_1.default)({ origin: this.config.origin }));
+        this.server.use((0, helmet_1.default)());
         this.server.use(this.checkRequst);
-        this.server.use(morgan_1.default('[Web] :remote-addr [:date[clf]] ":method :url HTTP/:http-version" :status :response-time ms - :res[content-length]'));
+        this.server.use((0, morgan_1.default)('[Web] :remote-addr [:date[clf]] ":method :url HTTP/:http-version" :status :response-time ms - :res[content-length]'));
     }
     async checkRequst(req, res, next) {
-        const reqURL = url_1.parse(req.url).query;
+        const reqURL = (0, url_1.parse)(req.url).query;
         const reg = /\[\w+\]/;
         if (reg.test(reqURL)) {
             next(new Error(http_status_codes_1.ReasonPhrases.BAD_REQUEST));
@@ -64,7 +70,7 @@ class Web {
     async errorHandler() {
         this.server.use((err, req, res, next) => {
             if (err.message) {
-                res.status(http_status_codes_1.getStatusCode(err.message)).json({
+                res.status((0, http_status_codes_1.getStatusCode)(err.message)).json({
                     error: err.message
                 });
             }
@@ -98,7 +104,7 @@ class Web {
                 secret: this.config.recaptcha.secretKey,
                 response: req.params.token
             });
-            await node_fetch_1.default('https://www.google.com/recaptcha/api/siteverify', {
+            await (0, node_fetch_1.default)('https://www.google.com/recaptcha/api/siteverify', {
                 method: 'POST',
                 body: options
             })
@@ -109,9 +115,9 @@ class Web {
         }
     }
     async getDay(req, res) {
-        const dayTimeCache = JSON.parse(await this.cacheManager.get(`${req.params.serverID}-Day`));
+        const dayTimeCache = await this.cacheManager.get(`${req.params.serverID}-Day`);
         if (dayTimeCache !== null) {
-            res.status(http_status_codes_1.StatusCodes.OK).json({ data: dayTimeCache });
+            res.status(http_status_codes_1.StatusCodes.OK).json({ data: JSON.parse(dayTimeCache) });
         }
         else {
             const startTime = new Date().setHours(0, 0, 0, 0) / 1000;
@@ -123,9 +129,9 @@ class Web {
         }
     }
     async getWeek(req, res) {
-        const weekTimeCache = JSON.parse(await this.cacheManager.get(`${req.params.serverID}-Week`));
+        const weekTimeCache = await this.cacheManager.get(`${req.params.serverID}-Week`);
         if (weekTimeCache !== null) {
-            res.status(http_status_codes_1.StatusCodes.OK).json({ data: weekTimeCache });
+            res.status(http_status_codes_1.StatusCodes.OK).json({ data: JSON.parse(weekTimeCache) });
         }
         else {
             const time = new Date();
@@ -304,7 +310,7 @@ class Web {
                         lastActivity = activity;
                 }
                 if (lastActivity !== undefined) {
-                    const now = ((endTime !== undefined) ? moment_1.default.unix(endTime) : moment_1.default()).format('YYYY-MM-DD HH:mm:ss');
+                    const now = ((endTime !== undefined) ? moment_1.default.unix(endTime) : (0, moment_1.default)()).format('YYYY-MM-DD HH:mm:ss');
                     switch (lastActivity.type) {
                         case 'join': {
                             dataSets.push({ content: '', start: lastActivity.time, end: now, group: userName, className: 'online', title: `Online<br>${lastActivity.time} - ${now}` });
@@ -331,8 +337,7 @@ class Web {
                     id: userName,
                     content: `<img class="avatar" src="${user.avatarURL}" /><span class="name">${(user.nick ? user.nick : user.username).substr(0, 20)}</span>`
                 });
-            }).catch(err => {
-                return;
+            }).catch(() => {
             });
         }
         let time = (startTime !== undefined) ? startTime : raw[0].timeStamp;
@@ -340,8 +345,8 @@ class Web {
         for (; time < end; time += ONE_DAY_SECONDS) {
             const date = new Date(time * 1000);
             const sunLight = suncalc_1.default.getTimes(date, 25.034276, 121.561696);
-            const sunRise = moment_1.default(sunLight.sunrise).format('YYYY-MM-DD HH:mm:ss');
-            const sunSet = moment_1.default(sunLight.sunset).format('YYYY-MM-DD HH:mm:ss');
+            const sunRise = (0, moment_1.default)(sunLight.sunrise).format('YYYY-MM-DD HH:mm:ss');
+            const sunSet = (0, moment_1.default)(sunLight.sunset).format('YYYY-MM-DD HH:mm:ss');
             dataSets.push({ content: '', start: sunRise, end: sunSet, type: 'background', className: 'sun' });
         }
         return {

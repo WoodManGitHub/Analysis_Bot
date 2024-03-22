@@ -16,13 +16,13 @@ export class CacheManager {
     public async setByTTL(key: string, value: string, ttl: number) {
         if (!this.client) throw ERR_DB_NOT_INIT;
 
-        await this.client.set([key, value, 'EX', ttl]);
+        await this.client.set(key, value, 'EX', ttl);
     }
 
     public async set(key: string, value: string) {
         if (!this.client) throw ERR_DB_NOT_INIT;
 
-        await this.client.set([key, value]);
+        await this.client.set(key, value);
     }
 
     public get(key: string) {

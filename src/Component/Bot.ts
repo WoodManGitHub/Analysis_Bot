@@ -28,7 +28,7 @@ export class Bot {
 
         this.bot = new CommandClient(
             this.config.token,
-            { restMode: true },
+            { restMode: true, intents: ['guilds', 'guildIntegrations', 'guildMessages', 'guildVoiceStates', 'guildMembers'] },
             { prefix: this.config.prefix }
         );
 
@@ -256,20 +256,20 @@ export class Bot {
             this.cacheManager.set(lastKey, timestamp.toString());
         }
 
-        const lastChange = await this.cacheManager.get(lastKey);
+        const lastChange = parseInt(await this.cacheManager.get(lastKey) ?? timestamp.toString());
 
         if (lastChange >= yesterdayTime && lastChange < midnightTime) { // yesterday
             this.cacheManager.incr(continuousKey);
             this.cacheManager.set(lastKey, timestamp.toString());
 
-            return await this.cacheManager.get(continuousKey);
+            return parseInt(await this.cacheManager.get(continuousKey) ?? count.toString());
         } else if (lastChange >= midnightTime && lastChange < tomorrowTime) { // today
-            return await this.cacheManager.get(continuousKey);
+            return parseInt(await this.cacheManager.get(continuousKey) ?? count.toString());
         }
         this.cacheManager.set(continuousKey, '1');
         this.cacheManager.set(lastKey, timestamp.toString());
 
-        return await this.cacheManager.get(continuousKey);
+        return parseInt(await this.cacheManager.get(continuousKey) ?? '1');
 
     }
 

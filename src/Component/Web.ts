@@ -130,10 +130,10 @@ export class Web {
     }
 
     private async getDay(req: Request, res: Response) {
-        const dayTimeCache: [] = JSON.parse(await this.cacheManager.get(`${req.params.serverID}-Day`));
+        const dayTimeCache = await this.cacheManager.get(`${req.params.serverID}-Day`);
 
         if (dayTimeCache !== null) {
-            res.status(StatusCodes.OK).json({ data: dayTimeCache });
+            res.status(StatusCodes.OK).json({ data: JSON.parse(dayTimeCache) });
         } else {
             const startTime = new Date().setHours(0, 0, 0, 0) / 1000;
             const endTime = this.getNowTime();
@@ -146,10 +146,10 @@ export class Web {
     }
 
     private async getWeek(req: Request, res: Response) {
-        const weekTimeCache: [] = JSON.parse(await this.cacheManager.get(`${req.params.serverID}-Week`));
+        const weekTimeCache = await this.cacheManager.get(`${req.params.serverID}-Week`);
 
         if (weekTimeCache !== null) {
-            res.status(StatusCodes.OK).json({ data: weekTimeCache});
+            res.status(StatusCodes.OK).json({ data: JSON.parse(weekTimeCache) });
         } else {
             const time = new Date();
             const midnight = time.setHours(0, 0, 0, 0) / 1000;
