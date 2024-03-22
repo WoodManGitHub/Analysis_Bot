@@ -1,25 +1,28 @@
 import { EventEmitter } from 'events';
 import { Db, MongoClient } from 'mongodb';
+import { Config } from './Config';
 
 export const ERR_DB_NOT_INIT = Error('MongoDB is not initialized');
 
-// tslint:disable-next-line:interface-name
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export declare interface MongoDB {
+    // eslint-disable-next-line no-unused-vars
     on(event: 'connect', listen: (database: Db) => void): this;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class MongoDB extends EventEmitter {
     public client?: Db;
 
-    constructor(config: any) {
+    constructor(config: Config) {
         super();
 
-        config = config.database;
+        const dbConfig = config.database;
 
-        MongoClient.connect(config.host, { useNewUrlParser: true, useUnifiedTopology: true }).then(client => {
+        MongoClient.connect(dbConfig.host, { useNewUrlParser: true, useUnifiedTopology: true }).then(client => {
             console.log('[MongoDB] Connected successfully to server');
 
-            this.client = client.db(config.name);
+            this.client = client.db(dbConfig.name);
 
             this.emit('connect', this.client);
         });

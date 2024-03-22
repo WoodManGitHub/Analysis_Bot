@@ -44,7 +44,10 @@ module.exports = {
         'no-useless-return': 'error',
         'no-else-return': 'error',
         'no-empty': 'error',
-        'space-before-function-paren': 'error',
+        'space-before-function-paren': [
+            'error',
+            'never'
+        ],
         'space-in-parens': 'error',
         'space-before-blocks': 'error',
         'comma-dangle': 'error',

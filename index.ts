@@ -8,9 +8,10 @@ import { MongoDB } from './Core/MongoDB';
 import { Redis } from './Core/Redis';
 import { SetManager } from './Core/SetManager';
 import { TimeManager } from './Core/TimeManager';
+import { Config } from './Core/Config';
 
 export class Core extends EventEmitter {
-    public readonly config = require(resolve('config.json'));
+    public readonly config: Config = require(resolve('config.json'));
     public readonly database = new MongoDB(this.config);
     public readonly cache = new Redis(this.config);
     public readonly TimeManager = new TimeManager(this);
@@ -28,9 +29,8 @@ export class Core extends EventEmitter {
             this.emit('ready');
         });
 
-        this.on('ready', async () => {
+        this.on('ready', async() => {
             try {
-                // tslint:disable-next-line:no-unused-expression
                 new Bot(this);
             } catch (error) {
                 console.error(error);
@@ -39,7 +39,6 @@ export class Core extends EventEmitter {
 
         this.on('discordReady', () => {
             try {
-                // tslint:disable-next-line:no-unused-expression
                 new Web(this);
             } catch (error) {
                 console.error(error);
@@ -48,17 +47,16 @@ export class Core extends EventEmitter {
     }
 
     private waitEvent(event: EventEmitter) {
-        // tslint:disable-next-line: no-shadowed-variable
         return new Promise((resolve, rejects) => {
             event.on('connect', resolve);
             event.on('error', rejects);
         });
     }
 
-    private async checkAll(process: any[]) {
-        const pending: any[] = [];
+    private async checkAll(process: EventEmitter[]) {
+        const pending: Promise<unknown>[] = [];
 
-        process.forEach((element: any) => {
+        process.forEach((element: EventEmitter) => {
             pending.push(this.waitEvent(element));
         });
 
@@ -66,5 +64,4 @@ export class Core extends EventEmitter {
     }
 }
 
-// tslint:disable-next-line:no-unused-expression
 new Core();

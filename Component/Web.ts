@@ -1,7 +1,6 @@
 import cors from 'cors';
-import { CommandClient } from 'eris';
-import { Application, NextFunction, Request, Response } from 'express';
-import express from 'express';
+import { CommandClient, Member } from 'eris';
+import express, { Application, NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 import { getStatusCode, ReasonPhrases, StatusCodes } from 'http-status-codes';
 import moment from 'moment';
@@ -13,11 +12,12 @@ import { parse, URLSearchParams } from 'url';
 import { Core } from '..';
 import { CacheManager } from '../Core/CacheManager';
 import { ITime, TimeManager } from '../Core/TimeManager';
+import { WebConfig } from '../Core/Config';
 
 const ONE_DAY_SECONDS = 86400;
 
 export class Web {
-    private config: any;
+    private config: WebConfig;
     private server: Application;
     private timeManager: TimeManager;
     private cacheManager: CacheManager;
@@ -27,7 +27,7 @@ export class Web {
         this.config = core.config.web;
         this.timeManager = core.TimeManager;
         this.cacheManager = core.CacheManager;
-        if (core.bot != null || core.bot !== undefined) {
+        if (core.bot !== null || core.bot !== undefined) {
             this.Bot = core.bot!;
         } else {
             throw new Error('Discord Client not defined');
@@ -76,6 +76,7 @@ export class Web {
     }
 
     private async errorHandler() {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
         this.server.use((err: Error, req: Request, res: Response, next: NextFunction) => {
             if (err.message) {
                 res.status(getStatusCode(err.message)).json({
@@ -85,6 +86,7 @@ export class Web {
         });
     }
 
+    // eslint-disable-next-line no-unused-vars
     private route(fn: (req: Request, res: Response, next: NextFunction) => Promise<void> | void) {
         return (req: Request, res: Response, next: NextFunction) => {
             const promise = fn.bind(this)(req, res, next);
@@ -103,6 +105,7 @@ export class Web {
         this.server.get('*', this.route(this.errorURL));
     }
 
+    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     private async errorURL(req: Request, res: Response) {
         throw new Error(ReasonPhrases.NOT_FOUND);
     }
@@ -119,10 +122,10 @@ export class Web {
                 method: 'POST',
                 body: options
             })
-            .then(response => response.json())
-            .then(data => {
-                res.status(StatusCodes.OK).json({ data });
-            });
+                .then(response => response.json())
+                .then(data => {
+                    res.status(StatusCodes.OK).json({ data });
+                });
         }
     }
 
@@ -198,7 +201,7 @@ export class Web {
             if (dataRaw[key] === undefined) return;
 
             const rawData = dataRaw[key];
-            await this.Bot.getRESTGuildMember(serverID, key).then(async (user: any) => {
+            await this.Bot.getRESTGuildMember(serverID, key).then(async(user: Member) => {
                 const userName = user.nick ? user.nick : user.username;
                 let lastActivity: { time: string, type: string } | undefined;
 
@@ -226,7 +229,6 @@ export class Web {
                                     break;
                                 }
                                 case 'leave': {
-                                    // tslint:disable-next-line: max-line-length
                                     dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'offline', title: `Offline<br>${lastActivity.time} - ${activity.time}`});
                                     break;
                                 }
@@ -239,7 +241,6 @@ export class Web {
                                     break;
                                 }
                                 default: {
-                                    // tslint:disable-next-line: max-line-length
                                     dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'unknown', title: `Unknown<br>${lastActivity.time} - ${activity.time}`});
                                     break;
                                 }
@@ -265,7 +266,6 @@ export class Web {
                                     break;
                                 }
                                 default: {
-                                    // tslint:disable-next-line: max-line-length
                                     dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'unknown', title: `Unknown<br>${lastActivity.time} - ${activity.time}`});
                                     break;
                                 }
@@ -279,7 +279,6 @@ export class Web {
                                     break;
                                 }
                                 case 'leave': {
-                                    // tslint:disable-next-line: max-line-length
                                     dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'offline', title: `Offline<br>${lastActivity.time} - ${activity.time}`});
                                     break;
                                 }
@@ -292,7 +291,6 @@ export class Web {
                                     break;
                                 }
                                 default: {
-                                    // tslint:disable-next-line: max-line-length
                                     dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'unknown', title: `Unknown<br>${lastActivity.time} - ${activity.time}`});
                                     break;
                                 }
@@ -306,7 +304,6 @@ export class Web {
                                     break;
                                 }
                                 case 'leave': {
-                                    // tslint:disable-next-line: max-line-length
                                     dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'offline', title: `Offline<br>${lastActivity.time} - ${activity.time}`});
                                     break;
                                 }
@@ -319,7 +316,6 @@ export class Web {
                                     break;
                                 }
                                 default: {
-                                    // tslint:disable-next-line: max-line-length
                                     dataSets.push({content: '', start: lastActivity.time, end: activity.time, group: userName, className: 'unknown', title: `Unknown<br>${lastActivity.time} - ${activity.time}`});
                                     break;
                                 }
@@ -366,8 +362,8 @@ export class Web {
                     id: userName,
                     content: `<img class="avatar" src="${user.avatarURL}" /><span class="name">${(user.nick ? user.nick : user.username).substr(0, 20)}</span>`
                 });
-            }).catch(err => {
-                return;
+            }).catch(() => {
+
             });
         }
 
@@ -413,7 +409,7 @@ export class Web {
     }
 
     private async cacheCorn() {
-        schedule.scheduleJob('0 0 * * *', async () => {
+        schedule.scheduleJob('0 0 * * *', async() => {
             const serverID = await this.timeManager.getDataByKeyword('serverID');
 
             const time = new Date();
